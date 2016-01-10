@@ -2,14 +2,21 @@ package com.ote;
 
 import edu.biu.scapi.comm.AuthenticatedChannel;
 import edu.biu.scapi.comm.Channel;
+import edu.biu.scapi.comm.EncryptedChannel;
+import edu.biu.scapi.comm.PlainTCPChannel;
 import edu.biu.scapi.comm.twoPartyComm.*;
 import edu.biu.scapi.exceptions.DuplicatePartyException;
+import edu.biu.scapi.exceptions.FactoriesException;
 import edu.biu.scapi.exceptions.InvalidDlogGroupException;
 import edu.biu.scapi.exceptions.SecurityLevelException;
 import edu.biu.scapi.interactiveMidProtocols.ot.OTOnByteArraySInput;
 import edu.biu.scapi.interactiveMidProtocols.ot.oneSidedSimulation.OTOneSidedSimDDHOnByteArraySender;
+import edu.biu.scapi.midLayer.symmetricCrypto.encryption.ScEncryptThenMac;
+import edu.biu.scapi.midLayer.symmetricCrypto.encryption.SymmetricEnc;
 import edu.biu.scapi.midLayer.symmetricCrypto.mac.ScCbcMacPrepending;
 import edu.biu.scapi.primitives.prf.bc.BcAES;
+import edu.biu.scapi.primitives.prg.PseudorandomGenerator;
+import edu.biu.scapi.tools.Factories.PrgFactory;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
@@ -72,7 +79,7 @@ public class PReceiver {
 
     // Method to read the value of a bit (0 or 1) of a byte array
     // http://stackoverflow.com/a/34095548/873309
-    int readBit(byte[] b, int x) {
+    public int readBit(byte[] b, int x) {
         int i = x / 8;
         int j = x % 8;
         return (b[i] >> j) & 1;
@@ -160,17 +167,30 @@ public class PReceiver {
     }
 
     // Method to set the tArray
-    public void setTArray() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, ShortBufferException {
+    public void setTArray() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, ShortBufferException, FactoriesException {
+
+        /*
+        // Testing the consistency of the PRG generator
+        for (int i = 0; i < 5; i++) {
+           String array = Arrays.toString(SCAPI_PRG(m, k0Array[1]));
+           int length = SCAPI_PRG(m, k0Array[1]).length;
+           System.out.println("Length: " + length + " Array: " + array);
+        }
+        System.out.println("======================");
+        */
 
         for (int i = 0; i < k0Array.length; i++) {
-            t0Array[i] = AES_CTR_Generator(m, k0Array[i]);
+            t0Array[i] = SCAPI_PRG(m, k0Array[i]);
         }
 
         for (int i = 0; i < k1Array.length; i++) {
-            t1Array[i] = AES_CTR_Generator(m, k1Array[i]);
+            t1Array[i] = SCAPI_PRG(m, k1Array[i]);
         }
 
     }
+
+    /*
+    INCORRECT FOR THE MOMENT
 
     // Method to return an encrypted message of size m using AES in Counter Mode
     // Why of size m? Because G: {0,1}^k -> {0,1}^m
@@ -195,7 +215,31 @@ public class PReceiver {
         cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec);
 
         return cipher.doFinal(k0);
-   }
+    }
+    */
+
+    // Pseudorandom Generator
+    // SCAPI's implementation using RC4 (only RC4 is supported at the moment)
+    // Uses the byte array as key and produces an outpout of size m
+    public byte[] SCAPI_PRG(int m, byte[] k) throws FactoriesException, InvalidKeyException {
+
+        // Create prg using the PrgFactory
+        PseudorandomGenerator prg = PrgFactory.getInstance().getObject("RC4");
+
+        // http://stackoverflow.com/a/14204473/873309
+        // Use the incoming byte array as the secret key
+        SecretKey secretKey = new SecretKeySpec(k, 0, k.length, "RC4");
+
+        // set the key
+        prg.setKey(secretKey);
+
+        // Get PRG bytes. The caller is responsible for allocating the out array.
+        // The result will be put in the out array.
+        byte[] outBytes = new byte[m];
+        prg.getPRGBytes(outBytes, 0, m);
+
+        return outBytes;
+    }
 
     // Method to print the tArray
     public void printTArray() {
@@ -211,6 +255,8 @@ public class PReceiver {
     }
 
     // Method to set the uArray
+    // G(k0) XOR G(k1) XOR ChoiceBits
+    // (all of size m)
     public void setUArray() {
 
         byte[] result;
@@ -228,7 +274,7 @@ public class PReceiver {
     public void printUArray() {
         System.out.println("\nU array:");
         for (int i = 0; i < l; i++) {
-            System.out.println(Arrays.toString(uArray[i]));
+            System.out.println("Length: " + uArray[i].length + ", Output: " + Arrays.toString(uArray[i]));
         }
     }
 
@@ -244,25 +290,25 @@ public class PReceiver {
 
     }
 
+    // OT EXTENSION PHASE
     // Method for sending the uArray during the OT EXTENSION PHASE
     public void uArrayTransferSender() throws DuplicatePartyException, IOException, TimeoutException, SecurityLevelException, NoSuchAlgorithmException {
 
-        PlainTCPSocketChannel plainChannel = plainChannelCreation(); // Create the channel object
-        ScCbcMacPrepending mac = new ScCbcMacPrepending(new BcAES()); // Create the mac
-
-        AuthenticatedChannel authChannel = new AuthenticatedChannel(plainChannel, mac);
+        EncryptedChannel encryptedChannel = encryptedChannelCreation(); // Create the channel object
+        ScEncryptThenMac encScheme = new ScEncryptThenMac();
+        EncryptedChannel encryptedTCPChannel = new EncryptedChannel(encryptedChannel, encScheme);
 
         for (int i = 0; i < l; i++) {
-            authChannel.send(uArray[i]);
+            encryptedTCPChannel.send(uArray[i]);
             System.out.println("Success!");
         }
 
-        authChannel.close();
+        encryptedTCPChannel.close();
 
     }
 
-    // Method to create a plain channel
-    public PlainTCPSocketChannel plainChannelCreation() throws DuplicatePartyException, TimeoutException {
+    // Method to create a encrypted channel
+    public EncryptedChannel encryptedChannelCreation() throws DuplicatePartyException, TimeoutException {
         // Prepare the parties list.
         LoadSocketParties loadParties = new LoadSocketParties("SocketParties.properties");
         List<PartyData> listOfParties = loadParties.getPartiesList();
@@ -273,7 +319,7 @@ public class PReceiver {
         Map<String, Channel> connections = commSetup.prepareForCommunication(1, 2000000);
 
         // Return the channel to the calling application. There is only one created channel.
-        return (PlainTCPSocketChannel) connections.values().toArray()[0];
+        return (EncryptedChannel) connections.values().toArray()[0];
     }
 
 }

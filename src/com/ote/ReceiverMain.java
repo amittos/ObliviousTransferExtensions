@@ -1,6 +1,7 @@
 package com.ote;
 
 import edu.biu.scapi.exceptions.DuplicatePartyException;
+import edu.biu.scapi.exceptions.FactoriesException;
 import edu.biu.scapi.exceptions.InvalidDlogGroupException;
 import edu.biu.scapi.exceptions.SecurityLevelException;
 
@@ -15,7 +16,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeoutException;
 
 public class ReceiverMain {
-    public static void main(String[] args) throws DuplicatePartyException, IOException, TimeoutException, ClassNotFoundException, InvalidDlogGroupException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, ShortBufferException, SecurityLevelException {
+    public static void main(String[] args) throws DuplicatePartyException, IOException, TimeoutException, ClassNotFoundException, InvalidDlogGroupException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, ShortBufferException, SecurityLevelException, FactoriesException {
 
         //=====================================================
         //                  INITIATION PHASE
@@ -40,12 +41,12 @@ public class ReceiverMain {
         //=====================================================
 
         Pr.setTArray();
-        Pr.printTArray();
+        //Pr.printTArray();
 
-        //Pr.setUArray();
-        //Pr.printUArray();
+        Pr.setUArray();
+        Pr.printUArray();
 
-        //Pr.uArrayTransferSender();
+        Pr.uArrayTransferSender();
 
     }
 }
