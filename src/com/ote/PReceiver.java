@@ -1,26 +1,20 @@
 package com.ote;
 
-import edu.biu.scapi.comm.AuthenticatedChannel;
 import edu.biu.scapi.comm.Channel;
-import edu.biu.scapi.comm.EncryptedChannel;
-import edu.biu.scapi.comm.PlainTCPChannel;
-import edu.biu.scapi.comm.twoPartyComm.*;
+import edu.biu.scapi.comm.twoPartyComm.LoadSocketParties;
+import edu.biu.scapi.comm.twoPartyComm.PartyData;
+import edu.biu.scapi.comm.twoPartyComm.SocketCommunicationSetup;
+import edu.biu.scapi.comm.twoPartyComm.TwoPartyCommunicationSetup;
 import edu.biu.scapi.exceptions.DuplicatePartyException;
 import edu.biu.scapi.exceptions.FactoriesException;
 import edu.biu.scapi.exceptions.InvalidDlogGroupException;
-import edu.biu.scapi.exceptions.SecurityLevelException;
 import edu.biu.scapi.interactiveMidProtocols.ot.OTOnByteArraySInput;
 import edu.biu.scapi.interactiveMidProtocols.ot.oneSidedSimulation.OTOneSidedSimDDHOnByteArraySender;
-import edu.biu.scapi.midLayer.symmetricCrypto.encryption.ScEncryptThenMac;
-import edu.biu.scapi.midLayer.symmetricCrypto.encryption.SymmetricEnc;
-import edu.biu.scapi.midLayer.symmetricCrypto.mac.ScCbcMacPrepending;
-import edu.biu.scapi.primitives.prf.bc.BcAES;
-import edu.biu.scapi.primitives.prg.PseudorandomGenerator;
-import edu.biu.scapi.tools.Factories.PrgFactory;
 
-import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.ShortBufferException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
@@ -62,6 +56,31 @@ public class PReceiver {
 
     }
 
+    // Method for the OT channel creation between the Sender and the Receiver
+    public static Channel obliviousTransferChannelCreation() throws IOException, DuplicatePartyException, TimeoutException {
+
+        // Prepare the parties list.
+        LoadSocketParties loadParties = new LoadSocketParties("SocketParties.properties");
+        List<PartyData> listOfParties = loadParties.getPartiesList();
+
+        TwoPartyCommunicationSetup commSetup = new SocketCommunicationSetup(listOfParties.get(1), listOfParties.get(0));
+
+        // Call the prepareForCommunication function to establish one connection within 2000000 milliseconds.
+        Map<String, Channel> connections = commSetup.prepareForCommunication(1, 2000000);
+
+        // Return the channel to the calling application. There is only one created channel.
+        return (Channel) connections.values().toArray()[0];
+    }
+
+    // Method to get the XOR result between two byte arrays
+    static byte[] xorByteArrays(byte[] a, byte[] b) {
+        byte[] result = new byte[Math.min(a.length, b.length)];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = (byte) (((int) a[i]) ^ ((int) b[i]));
+        }
+        return result;
+    }
+
     // Method to create the initial choice bits of size m
     public void setChoiceBits() {
         new SecureRandom().nextBytes(choiceBits);
@@ -69,6 +88,9 @@ public class PReceiver {
 
     // Method to print the initial choice bits of size m
     public void printChoiceBits() {
+
+        System.out.println("These are the Choice Bits of PReceiver. To be used in the OT Extension Phase\n");
+
         int counter = 0;
         for (int i = 0; i < m; i++) {
             System.out.println(readBit(choiceBits, i));
@@ -92,13 +114,13 @@ public class PReceiver {
     public void setKArray() {
 
         for (int i = 0; i < l; i++) {
-            byte[] newByte = new byte[k/8]; // n = 128 bits, so 16 bytes (128/8)
+            byte[] newByte = new byte[k / 8]; // n = 128 bits, so 16 bytes (128/8)
             new Random().nextBytes(newByte);
             k0Array[i] = newByte;
         }
 
         for (int i = 0; i < l; i++) {
-            byte[] newByte = new byte[k/8]; // n = 128 bits, so 16 bytes (128/8)
+            byte[] newByte = new byte[k / 8]; // n = 128 bits, so 16 bytes (128/8)
             new Random().nextBytes(newByte);
             k1Array[i] = newByte;
         }
@@ -107,13 +129,19 @@ public class PReceiver {
 
     // Method to print the kArray
     public void printKArray() {
+
+        System.out.println("\nBelow are the l pairs of PReceiver. \n\nk0Array:\n");
+
         int counter = 0;
         for (int i = 0; i < l; i++) {
             System.out.println("Length: " + k0Array[i].length + ", " + Arrays.toString(k0Array[i]));
             counter++;
         }
         System.out.println("Number: " + counter);
-        System.out.println("=======================");
+        System.out.println("\n=======================");
+
+        System.out.println("\nk1Array:\n");
+
         counter = 0;
         for (int i = 0; i < l; i++) {
             System.out.println("Length: " + k1Array[i].length + ", " + Arrays.toString(k1Array[i]));
@@ -128,6 +156,8 @@ public class PReceiver {
     // Method for the PReceiver to use OT as a Sender (OT PHASE). The method will run l times
     public void obliviousTransferSender() throws DuplicatePartyException, IOException, TimeoutException, ClassNotFoundException, InvalidDlogGroupException {
 
+        System.out.println("\nOblivious Transfer starting now...\n");
+
         // Concrete implementation of the receiver side in oblivious transfer based on the DDH assumption that achieves
         // privacy for the case that the sender is corrupted and simulation in the case that the receiver is corrupted.
         OTOneSidedSimDDHOnByteArraySender sender = new OTOneSidedSimDDHOnByteArraySender();
@@ -139,54 +169,15 @@ public class PReceiver {
         // Run the transfer l times
         for (int i = 0; i < l; i++) {
 
-                // Get the inputs from k0Array and k1Array
-                x0 = k0Array[i];
-                x1 = k1Array[i];
+            // Get the inputs from k0Array and k1Array
+            x0 = k0Array[i];
+            x1 = k1Array[i];
 
-                OTOnByteArraySInput input = new OTOnByteArraySInput(x0, x1); // Create the input object
-                Channel channel = obliviousTransferChannelCreation(); // Create the channel object
-                sender.transfer(channel, input); // Send the inputs through the channel
+            OTOnByteArraySInput input = new OTOnByteArraySInput(x0, x1); // Create the input object
+            Channel channel = obliviousTransferChannelCreation(); // Create the channel object
+            sender.transfer(channel, input); // Send the inputs through the channel
 
         }
-    }
-
-    // Method for the OT channel creation between the Sender and the Receiver
-    public static Channel obliviousTransferChannelCreation() throws IOException, DuplicatePartyException, TimeoutException {
-
-        // Prepare the parties list.
-        LoadSocketParties loadParties = new LoadSocketParties("SocketParties.properties");
-        List<PartyData> listOfParties = loadParties.getPartiesList();
-
-        TwoPartyCommunicationSetup commSetup = new SocketCommunicationSetup(listOfParties.get(1), listOfParties.get(0));
-
-        // Call the prepareForCommunication function to establish one connection within 2000000 milliseconds.
-        Map<String, Channel> connections = commSetup.prepareForCommunication(1, 2000000);
-
-        // Return the channel to the calling application. There is only one created channel.
-        return (Channel) connections.values().toArray()[0];
-    }
-
-    // Method to set the tArray
-    public void setTArray() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, ShortBufferException, FactoriesException {
-
-        /*
-        // Testing the consistency of the PRG generator
-        for (int i = 0; i < 5; i++) {
-           String array = Arrays.toString(SCAPI_PRG(m, k0Array[1]));
-           int length = SCAPI_PRG(m, k0Array[1]).length;
-           System.out.println("Length: " + length + " Array: " + array);
-        }
-        System.out.println("======================");
-        */
-
-        for (int i = 0; i < k0Array.length; i++) {
-            t0Array[i] = SCAPI_PRG(m, k0Array[i]);
-        }
-
-        for (int i = 0; i < k1Array.length; i++) {
-            t1Array[i] = SCAPI_PRG(m, k1Array[i]);
-        }
-
     }
 
     /*
@@ -218,36 +209,40 @@ public class PReceiver {
     }
     */
 
-    // Pseudorandom Generator
-    // SCAPI's implementation using RC4 (only RC4 is supported at the moment)
-    // Uses the byte array as key and produces an outpout of size m
-    public byte[] SCAPI_PRG(int m, byte[] k) throws FactoriesException, InvalidKeyException {
+    // Method to set the tArray
+    public void setTArray() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, ShortBufferException, FactoriesException {
 
-        // Create prg using the PrgFactory
-        PseudorandomGenerator prg = PrgFactory.getInstance().getObject("RC4");
+        /*
+        // Testing the consistency of the PRG generator
+        for (int i = 0; i < 5; i++) {
+           String array = Arrays.toString(SCAPI_PRG(m, k0Array[1]));
+           int length = SCAPI_PRG(m, k0Array[1]).length;
+           System.out.println("Length: " + length + " Array: " + array);
+        }
+        System.out.println("======================");
+        */
 
-        // http://stackoverflow.com/a/14204473/873309
-        // Use the incoming byte array as the secret key
-        SecretKey secretKey = new SecretKeySpec(k, 0, k.length, "RC4");
+        for (int i = 0; i < k0Array.length; i++) {
+            t0Array[i] = GlobalMethods.SCAPI_PRG(m, k0Array[i]);
+        }
 
-        // set the key
-        prg.setKey(secretKey);
+        for (int i = 0; i < k1Array.length; i++) {
+            t1Array[i] = GlobalMethods.SCAPI_PRG(m, k1Array[i]);
+        }
 
-        // Get PRG bytes. The caller is responsible for allocating the out array.
-        // The result will be put in the out array.
-        byte[] outBytes = new byte[m];
-        prg.getPRGBytes(outBytes, 0, m);
-
-        return outBytes;
     }
 
     // Method to print the tArray
     public void printTArray() {
-        System.out.println("t0Array: ");
+
+        System.out.println("\nBelow is the tArray which contains the G(k). \n\nt0Array:\n");
+
         for (int i = 0; i < t0Array.length; i++) {
             System.out.println("Length: " + t0Array[i].length + ", Output: " + Arrays.toString(t0Array[i]));
         }
-        System.out.println("t1Array: ");
+
+        System.out.println("\nt1Array:\n");
+
         for (int i = 0; i < t1Array.length; i++) {
             System.out.println("Length: " + t1Array[i].length + ", Output: " + Arrays.toString(t1Array[i]));
         }
@@ -272,24 +267,51 @@ public class PReceiver {
 
     // Method to print the uArray
     public void printUArray() {
-        System.out.println("\nU array:");
+
+        System.out.println("\nBelow is the uArray which contains the resulf of: G(k0) XOR G(k1) XOR ChoiceBits \nTo be sent to PSender.\n");
+
         for (int i = 0; i < l; i++) {
             System.out.println("Length: " + uArray[i].length + ", Output: " + Arrays.toString(uArray[i]));
         }
     }
 
-    // Method to get the XOR result between two byte arrays
-    static byte[] xorByteArrays(byte[] a, byte[] b) {
-        byte[] result = new byte[Math.min(a.length, b.length)];
+    // OT EXTENSION PHASE
+    // Method for sending the uArray during the OT EXTENSION PHASE
+    // This is a PLAIN channel. No security is required.
+    public void uArrayTransferSender() throws TimeoutException, DuplicatePartyException, IOException {
 
-        for (int i = 0; i < result.length; i++) {
-            result[i] = (byte) (((int) a[i]) ^ ((int) b[i]));
+        System.out.println("\nTransfer begins now...\n");
+
+        Channel plainTCPChannel = plainTCPChannelCreation();
+
+        for (int i = 0; i < l; i++) {
+            plainTCPChannel.send(uArray[i]);
         }
 
-        return result;
+        plainTCPChannel.close();
+
+        System.out.println("\nTransfer completed.\n");
 
     }
 
+    // Method to create a plain channel
+    public Channel plainTCPChannelCreation() throws DuplicatePartyException, TimeoutException {
+
+        // Prepare the parties list.
+        LoadSocketParties loadParties = new LoadSocketParties("SocketParties.properties");
+        List<PartyData> listOfParties = loadParties.getPartiesList();
+
+        TwoPartyCommunicationSetup commSetup = new SocketCommunicationSetup(listOfParties.get(1), listOfParties.get(0));
+
+        // Call the prepareForCommunication function to establish one connection within 2000000 milliseconds.
+        Map<String, Channel> connections = commSetup.prepareForCommunication(1, 2000000);
+
+        // Return the channel to the calling application. There is only one created channel.
+        return (Channel) connections.values().toArray()[0];
+
+    }
+
+    /*
     // OT EXTENSION PHASE
     // Method for sending the uArray during the OT EXTENSION PHASE
     public void uArrayTransferSender() throws DuplicatePartyException, IOException, TimeoutException, SecurityLevelException, NoSuchAlgorithmException {
@@ -322,6 +344,7 @@ public class PReceiver {
         return (EncryptedChannel) connections.values().toArray()[0];
     }
 
+    */
 }
 
 

@@ -25,23 +25,23 @@ public class ReceiverMain {
         PReceiver Pr = new PReceiver(); // Create the object of the Receiver
 
         Pr.setChoiceBits();
-        //Pr.printChoiceBits();
+        Pr.printChoiceBits();
 
         //=====================================================
         //                      OT PHASE
         //=====================================================
 
         Pr.setKArray();
-        //Pr.printKArray();
+        Pr.printKArray();
 
-        //Pr.obliviousTransferSender(); // Initiate the OT between the Sender and the Receiver. The OT will run l times.
+        Pr.obliviousTransferSender(); // Initiate the OT between the Sender and the Receiver. The OT will run l times.
 
         //=====================================================
         //                  OT EXTENSION PHASE
         //=====================================================
 
         Pr.setTArray();
-        //Pr.printTArray();
+        Pr.printTArray();
 
         Pr.setUArray();
         Pr.printUArray();

@@ -7,7 +7,17 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="JARs" level="project" />
-    <orderEntry type="library" name="DLLs" level="project" />
+    <orderEntry type="library" exported="" name="DLLs" level="application" />
+    <orderEntry type="module-library" exported="">
+      <library name="Scapi JavaDocs">
+        <CLASSES />
+        <JAVADOC>
+          <root url="file://$USER_HOME$/scapi/doc/javadoc/SCAPI-V2-3-0" />
+          <root url="file://$USER_HOME$/scapi/doc/javadoc/SCAPI-V2-4-0" />
+        </JAVADOC>
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="library" exported="" name="JARs" level="application" />
   </component>
 </module>
