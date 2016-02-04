@@ -16,7 +16,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 import java.io.IOException;
-import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -25,18 +24,17 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
-public class PReceiver implements Serializable {
+public class PReceiver {
 
-    public static byte[] choiceBits;
-    public static byte[][] t0Array; // Array which contains the results of the PRG for the OT EXTENSION PHASE (Array of byte[])
-    public static byte[][] t1Array; // Array which contains the results of the PRG for the OT EXTENSION PHASE (Array of byte[])
-    public static byte[][] t0jArray;
-    public static byte[][] t1jArray;
     private int m, n, k, l;
+    private byte[] choiceBits;
+    private byte[][] t0Array; // Array which contains the results of the PRG for the OT EXTENSION PHASE (Array of byte[])
+    private byte[][] t1Array; // Array which contains the results of the PRG for the OT EXTENSION PHASE (Array of byte[])
+    private byte[][] t0jArray;
+    private byte[][] t1jArray;
     private byte[][] k0Array; // Array which contains the keys made by the Receiver for the OT PHASE (Array of byte[])
     private byte[][] k1Array; // Array which contains the keys made by the Receiver for the OT PHASE (Array of byte[])
     private byte[][] uArray; // Array which contains the result of [G(k0) XOR G(k1) XOR choiceBits] to be sent to the Sender for the OT EXTENSION PHASE (Array of byte[])
-    private byte[][][] x;
 
     // Default Constructor
     public PReceiver() {
@@ -44,7 +42,7 @@ public class PReceiver implements Serializable {
         n = 128;
         k = 128;
         l = 128;
-        choiceBits = new byte[m/8];
+        choiceBits = new byte[m];
         k0Array = new byte[l][];
         k1Array = new byte[l][];
         t0Array = new byte[l][];
@@ -84,6 +82,14 @@ public class PReceiver implements Serializable {
         return result;
     }
 
+    // Method to read the value of a bit (0 or 1) of a byte array
+    // http://stackoverflow.com/a/34095548/873309
+    public static int readBit(byte[] b, int x) {
+        int i = x / 8;
+        int j = x % 8;
+        return (b[i] >> j) & 1;
+    }
+
     // Method to create the initial choice bits of size m
     public void setChoiceBits() {
         new SecureRandom().nextBytes(choiceBits);
@@ -96,7 +102,7 @@ public class PReceiver implements Serializable {
 
         int counter = 0;
         for (int i = 0; i < m; i++) {
-            System.out.println(GlobalMethods.readBit(choiceBits, i));
+            System.out.println(readBit(choiceBits, i));
             counter++;
         }
         System.out.println("Number of bits: " + counter);
@@ -191,16 +197,21 @@ public class PReceiver implements Serializable {
     // Method to print the tArray
     public void printTArray() {
 
+        int counter = 0;
+
         System.out.println("\nBelow is the tArray which contains the G(k). \n\nt0Array:\n");
 
         for (int i = 0; i < t0Array.length; i++) {
-            System.out.println("Length: " + t0Array[i].length + ", Output: " + Arrays.toString(t0Array[i]));
+            System.out.println(counter + ": Length: " + t0Array[i].length + ", Output: " + Arrays.toString(t0Array[i]));
+            counter++;
         }
 
         System.out.println("\nt1Array:\n");
+        counter = 0;
 
         for (int i = 0; i < t1Array.length; i++) {
-            System.out.println("Length: " + t1Array[i].length + ", Output: " + Arrays.toString(t1Array[i]));
+            System.out.println(counter + ": Length: " + t1Array[i].length + ", Output: " + Arrays.toString(t1Array[i]));
+            counter++;
         }
 
     }
@@ -214,8 +225,13 @@ public class PReceiver implements Serializable {
 
         for (int i = 0; i < l; i++) {
 
-            result = xorByteArrays(t0Array[i], t1Array[1]);
+            result = xorByteArrays(t0Array[i], t1Array[i]);
             uArray[i] = xorByteArrays(result, choiceBits);
+
+            System.out.println("t0Array:" + Arrays.toString(t0Array[i]));
+            System.out.println("t1Array:" + Arrays.toString(t1Array[i]));
+            System.out.println("choiceBits:" + Arrays.toString(choiceBits));
+            System.out.println("uArray:" + Arrays.toString(uArray[i]));
 
         }
 
@@ -271,9 +287,7 @@ public class PReceiver implements Serializable {
     public void setT0JArray() throws IOException {
 
         ArrayList<Byte> arrayList = new ArrayList<>();
-
         int bitCounter = 0;
-        int mCounter = 0;
 
         for (int j = 0; j < m; j++) {
 
@@ -281,19 +295,17 @@ public class PReceiver implements Serializable {
 
             for (int i = 0; i < l; i++) {
 
-                int x = (GlobalMethods.readBit(t0Array[i], bitCounter));
+                int x = (readBit(t0Array[i], bitCounter));
                 arrayList.add((byte) x);
 
             }
 
-            System.out.println("\nThe converted arrayList to a ByteArray is: " + GlobalMethods.arrayListToByteArray(arrayList));
-            System.out.println("The length is: " + GlobalMethods.arrayListToByteArray(arrayList).length);
-            System.out.println("The converted arrayList to a ByteArray is (in String format): " + Arrays.toString(GlobalMethods.arrayListToByteArray(arrayList)));
+            //System.out.println("\nThe converted arrayList to a ByteArray is: " + GlobalMethods.arrayListToByteArray(arrayList));
+            //System.out.println("The length is: " + GlobalMethods.arrayListToByteArray(arrayList).length);
+            //System.out.println("The converted arrayList to a ByteArray is (in String format): " + Arrays.toString(GlobalMethods.arrayListToByteArray(arrayList)));
 
-            t0jArray[mCounter] = GlobalMethods.arrayListToByteArray(arrayList);
-
+            t0jArray[j] = GlobalMethods.arrayListToByteArray(arrayList);
             bitCounter++;
-            mCounter++;
 
         }
     }
@@ -302,9 +314,7 @@ public class PReceiver implements Serializable {
     public void setT1JArray() throws IOException {
 
         ArrayList<Byte> arrayList = new ArrayList<>();
-
         int bitCounter = 0;
-        int mCounter = 0;
 
         for (int j = 0; j < m; j++) {
 
@@ -312,19 +322,17 @@ public class PReceiver implements Serializable {
 
             for (int i = 0; i < l; i++) {
 
-                int x = (GlobalMethods.readBit(t1Array[i], bitCounter));
+                int x = (readBit(t1Array[i], bitCounter));
                 arrayList.add((byte) x);
 
             }
 
-            System.out.println("\nThe converted arrayList to a ByteArray is: " + GlobalMethods.arrayListToByteArray(arrayList));
-            System.out.println("The length is: " + GlobalMethods.arrayListToByteArray(arrayList).length);
-            System.out.println("The converted arrayList to a ByteArray is (in String format): " + Arrays.toString(GlobalMethods.arrayListToByteArray(arrayList)));
+            //System.out.println("\nThe converted arrayList to a ByteArray is: " + GlobalMethods.arrayListToByteArray(arrayList));
+            //System.out.println("The length is: " + GlobalMethods.arrayListToByteArray(arrayList).length);
+            //System.out.println("The converted arrayList to a ByteArray is (in String format): " + Arrays.toString(GlobalMethods.arrayListToByteArray(arrayList)));
 
-            t1jArray[mCounter] = GlobalMethods.arrayListToByteArray(arrayList);
-
+            t1jArray[j] = GlobalMethods.arrayListToByteArray(arrayList);
             bitCounter++;
-            mCounter++;
 
         }
     }
@@ -349,25 +357,6 @@ public class PReceiver implements Serializable {
             System.out.println("Output (String): " + Arrays.toString(t1jArray[i]));
         }
 
-    }
-
-    // TEST method
-    public void test_printR0() {
-        //System.out.println("This is a TEST method!");
-        System.out.println("choiceBits[0] = " + GlobalMethods.readBit(choiceBits, 0));
-    }
-
-    // TEST method
-    public void test_printT0() {
-        //System.out.println("This is a TEST method!");
-        System.out.println("This is the result of T0[0]: " + Arrays.toString(t0Array[0]));
-    }
-
-    // TEST method
-    public void test_printTJArray() {
-        //System.out.println("This is a TEST method!");
-        System.out.println("This is the result of TJ[0]: " + Arrays.toString(t0jArray[0]));
-        System.out.println("This is the result of TJ[1]: " + Arrays.toString(t0jArray[1]));
     }
 
 }

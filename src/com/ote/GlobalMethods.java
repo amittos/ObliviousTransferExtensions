@@ -47,45 +47,10 @@ public class GlobalMethods {
         return ret;
     }
 
-    // Method to read the value of a bit (0 or 1) of a byte array
-    // http://stackoverflow.com/a/34095548/873309
-    public static int readBit(byte[] b, int x) {
-        int i = x / 8;
-        int j = x % 8;
-        return (b[i] >> j) & 1;
-    }
+}
 
 
 /*
-    // Method for tests
-    public static void testing() {
-
-        //System.out.println("PSender: sArray[0]: " + readBit(PSender.sArray, 0));
-        //System.out.println("PSender: qArray[0]: " +  Arrays.toString(PSender.qArray[0]));
-
-        byte[] psender_qarray = PSender.qArray[0];
-        byte[] psender_qjarray = PSender.qjArray[0];
-
-        //System.out.println("PReceiver: choiceBits[0]: " + readBit(PReceiver.choiceBits, 0));
-        //System.out.println("PReceiver: t0Array[0]: " +  Arrays.toString(PReceiver.t0Array[0]));
-
-        byte[] preceiver_t0array = PReceiver.t0Array[0];
-        byte[] preceiver_t0jarray = PReceiver.t0jArray[0];
-
-        if (psender_qarray == preceiver_t0array) {
-            System.out.println("TRUE: PSender.qArray[0] == PReceiver.t0Array[0]");
-        } else {
-            System.out.println("FALSE: PSender.qArray[0] =/= PReceiver.t0Array[0]");
-        }
-
-        if (psender_qjarray == preceiver_t0jarray) {
-            System.out.println("TRUE: PSender.qjArray[0] == PReceiver.t0jArray[0]");
-        } else {
-            System.out.println("FALSE: PSender.qjArray[0] =/= PReceiver.t0jArray[0]");
-        }
-
-    }
-
     //INCORRECT FOR THE MOMENT
     // Method to return an encrypted message of size m using AES in Counter Mode
     // Why of size m? Because G: {0,1}^k -> {0,1}^m
@@ -111,6 +76,4 @@ public class GlobalMethods {
 
         return cipher.doFinal(k0);
     }
-    */
-
-}
+*/

@@ -13,18 +13,17 @@ import edu.biu.scapi.interactiveMidProtocols.ot.OTROutput;
 import edu.biu.scapi.interactiveMidProtocols.ot.oneSidedSimulation.OTOneSidedSimDDHOnByteArrayReceiver;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.security.InvalidKeyException;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
-public class PSender implements Serializable {
+public class PSender {
 
-    public static byte[] sArray; // Choice bits for the OT PHASE
-    public static byte[][] qArray; // Array which contains the result of [(Si * Ui) XOR G(Ksi)] for the OT EXTENSION PHASE (Array of byte[])
-    public static byte[][] qjArray; // Array which contains the [...]
     private int m, n, k, l;
+    private byte[] sArray; // Choice bits for the OT PHASE
+    private byte[][] qArray; // Array which contains the result of [(Si * Ui) XOR G(Ksi)] for the OT EXTENSION PHASE (Array of byte[])
+    private byte[][] qjArray; // Array which contains the [...]
     private byte[][] x0Array; // Array which contains the initial objects (Array of byte[])
     private byte[][] x1Array; // Array which contains the initial objects (Array of byte[])
     private byte[][] kArray; // The array which contains the keys received via the OT PHASE (Array of byte[])
@@ -76,6 +75,14 @@ public class PSender implements Serializable {
             result[i] = (byte) (((int) a[i]) ^ ((int) b[i]));
         }
         return result;
+    }
+
+    // Method to read the value of a bit (0 or 1) of a byte array
+    // http://stackoverflow.com/a/34095548/873309
+    public static int readBit(byte[] b, int x) {
+        int i = x / 8;
+        int j = x % 8;
+        return (b[i] >> j) & 1;
     }
 
     // Method to create randomly the initial objects for the Sender
@@ -143,7 +150,7 @@ public class PSender implements Serializable {
 
         int counter = 0;
         for (int i = 0; i < l; i++) {
-            System.out.println(GlobalMethods.readBit(sArray, i));
+            System.out.println(readBit(sArray, i));
             counter++;
         }
         System.out.println("Number of bits: " + counter);
@@ -165,7 +172,7 @@ public class PSender implements Serializable {
         for (int i = 0; i < l; i++) {
 
             //System.out.println("The bit is: " + readBit(sArray, i));
-            byte sigma = (byte) GlobalMethods.readBit(sArray, i); // Reads the input for the receiver from the generated sArray
+            byte sigma = (byte) readBit(sArray, i); // Reads the input for the receiver from the generated sArray
 
             // Create the input using sigma
             // Concrete implementation of OT receiver input.
@@ -238,7 +245,7 @@ public class PSender implements Serializable {
     public void setQArray() throws InvalidKeyException, FactoriesException {
 
         for (int i = 0; i < l; i++) {
-            if (GlobalMethods.readBit(sArray, i) == 0) {
+            if (readBit(sArray, i) == 0) {
                 //System.out.println("sArray[" + i + "]: " + sArray[i]);
                 //System.out.println("qArray[i] = SCAPI_PRG(m, kArray[i])");
                 qArray[i] = GlobalMethods.SCAPI_PRG(m, kArray[i]);
@@ -252,9 +259,11 @@ public class PSender implements Serializable {
 
     // Method to print the qArray
     public void printQArray() {
+        int counter = 0;
         System.out.println("\nBelow is the qArray which contains the result of [(Si * Ui) XOR G(Ksi)]\n");
         for (int i = 0; i < l; i++) {
-            System.out.println("Length: " + qArray[i].length + ", Output: " + Arrays.toString(qArray[i]));
+            System.out.println(counter + ": Length: " + qArray[i].length + ", Output: " + Arrays.toString(qArray[i]));
+            counter++;
         }
     }
 
@@ -262,9 +271,7 @@ public class PSender implements Serializable {
     public void setQJArray() throws IOException {
 
         ArrayList<Byte> arrayList = new ArrayList<>();
-
         int bitCounter = 0;
-        int mCounter = 0;
 
         for (int j = 0; j < m; j++) {
 
@@ -272,19 +279,17 @@ public class PSender implements Serializable {
 
             for (int i = 0; i < l; i++) {
 
-                int x = (GlobalMethods.readBit(qArray[i], bitCounter));
+                int x = (readBit(qArray[i], bitCounter));
                 arrayList.add((byte) x);
 
             }
 
-            System.out.println("\nThe converted arrayList to a ByteArray is: " + GlobalMethods.arrayListToByteArray(arrayList));
-            System.out.println("The length is: " + GlobalMethods.arrayListToByteArray(arrayList).length);
-            System.out.println("The converted arrayList to a ByteArray is (in String format): " + Arrays.toString(GlobalMethods.arrayListToByteArray(arrayList)));
+            //System.out.println("\nThe converted arrayList to a ByteArray is: " + GlobalMethods.arrayListToByteArray(arrayList));
+            //System.out.println("The length is: " + GlobalMethods.arrayListToByteArray(arrayList).length);
+            //System.out.println("The converted arrayList to a ByteArray is (in String format): " + Arrays.toString(GlobalMethods.arrayListToByteArray(arrayList)));
 
-            qjArray[mCounter] = GlobalMethods.arrayListToByteArray(arrayList);
-
+            qjArray[j] = GlobalMethods.arrayListToByteArray(arrayList);
             bitCounter++;
-            mCounter++;
 
         }
     }
@@ -298,19 +303,6 @@ public class PSender implements Serializable {
             System.out.println("Output (String): " + Arrays.toString(qjArray[i]));
         }
 
-    }
-
-    // TEST method
-    public void test_printQJArray() {
-        //System.out.println("This is a TEST method!");
-        System.out.println("This is the result of QJ[0]: " + Arrays.toString(qjArray[0]));
-    }
-
-    // TEST method
-    public void test_printQ0() {
-        //System.out.println("This is a TEST method!");
-        System.out.println("S[0] = " + GlobalMethods.readBit(sArray, 0));
-        System.out.println("This is the result of Q[0]: " + Arrays.toString(qArray[0]));
     }
 
 }

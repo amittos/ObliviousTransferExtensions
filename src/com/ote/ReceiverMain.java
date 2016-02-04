@@ -32,7 +32,7 @@ public class ReceiverMain {
         //=====================================================
 
         Pr.setKArray();
-        Pr.printKArray();
+        //Pr.printKArray();
 
         Pr.obliviousTransferSender(); // Initiate the OT between the Sender and the Receiver. The OT will run l times.
 
@@ -50,18 +50,7 @@ public class ReceiverMain {
 
         Pr.setT0JArray();
         Pr.setT1JArray();
-
-        System.out.println("\n\n===============================================");
-        System.out.println("\t\t\t\t\tTESTING");
-        System.out.println("===============================================\n");
-
-        Pr.test_printR0();
-        Pr.test_printT0();
-        Pr.test_printTJArray();
-
-        System.out.println("\n===============================================");
-
-        //Pr.printTJArray();
+        Pr.printTJArray();
 
     }
 }

@@ -19,7 +19,7 @@ public class SenderMain {
         PSender Ps = new PSender(); // Create the object of the Sender
 
         Ps.setXArray();
-        Ps.printXArray();
+        //Ps.printXArray();
 
         //=====================================================
         //                      OT PHASE
@@ -29,7 +29,7 @@ public class SenderMain {
         Ps.printSArray();
 
         Ps.obliviousTransferReceiver(); // Initiate the OT between the Sender and the Receiver. The OT will run l times.
-        Ps.printKArray();
+        //Ps.printKArray();
 
         //=====================================================
         //                  OT EXTENSION PHASE
@@ -42,17 +42,7 @@ public class SenderMain {
         Ps.printQArray();
 
         Ps.setQJArray();
-
-        System.out.println("\n\n===============================================");
-        System.out.println("\t\t\t\t\tTESTING");
-        System.out.println("===============================================\n");
-
-        Ps.test_printQ0();
-        Ps.test_printQJArray();
-
-        System.out.println("\n===============================================");
-
-        //Ps.printQJArray();
+        Ps.printQJArray();
 
     }
 }
