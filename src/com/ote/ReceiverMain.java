@@ -48,5 +48,20 @@ public class ReceiverMain {
 
         Pr.uArrayTransferSender();
 
+        Pr.setT0JArray();
+        Pr.setT1JArray();
+
+        System.out.println("\n\n===============================================");
+        System.out.println("\t\t\t\t\tTESTING");
+        System.out.println("===============================================\n");
+
+        Pr.test_printR0();
+        Pr.test_printT0();
+        Pr.test_printTJArray();
+
+        System.out.println("\n===============================================");
+
+        //Pr.printTJArray();
+
     }
 }

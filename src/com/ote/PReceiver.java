@@ -16,26 +16,27 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
-public class PReceiver {
+public class PReceiver implements Serializable {
 
+    public static byte[] choiceBits;
+    public static byte[][] t0Array; // Array which contains the results of the PRG for the OT EXTENSION PHASE (Array of byte[])
+    public static byte[][] t1Array; // Array which contains the results of the PRG for the OT EXTENSION PHASE (Array of byte[])
+    public static byte[][] t0jArray;
+    public static byte[][] t1jArray;
     private int m, n, k, l;
-    private byte[] choiceBits;
     private byte[][] k0Array; // Array which contains the keys made by the Receiver for the OT PHASE (Array of byte[])
     private byte[][] k1Array; // Array which contains the keys made by the Receiver for the OT PHASE (Array of byte[])
-    private byte[][] t0Array; // Array which contains the results of the PRG for the OT EXTENSION PHASE (Array of byte[])
-    private byte[][] t1Array; // Array which contains the results of the PRG for the OT EXTENSION PHASE (Array of byte[])
     private byte[][] uArray; // Array which contains the result of [G(k0) XOR G(k1) XOR choiceBits] to be sent to the Sender for the OT EXTENSION PHASE (Array of byte[])
+    private byte[][][] x;
 
     // Default Constructor
     public PReceiver() {
@@ -49,6 +50,8 @@ public class PReceiver {
         t0Array = new byte[l][];
         t1Array = new byte[l][];
         uArray = new byte[l][];
+        t0jArray = new byte[m][];
+        t1jArray = new byte[m][];
     }
 
     // Overloaded Constructor
@@ -93,18 +96,10 @@ public class PReceiver {
 
         int counter = 0;
         for (int i = 0; i < m; i++) {
-            System.out.println(readBit(choiceBits, i));
+            System.out.println(GlobalMethods.readBit(choiceBits, i));
             counter++;
         }
         System.out.println("Number of bits: " + counter);
-    }
-
-    // Method to read the value of a bit (0 or 1) of a byte array
-    // http://stackoverflow.com/a/34095548/873309
-    public int readBit(byte[] b, int x) {
-        int i = x / 8;
-        int j = x % 8;
-        return (b[i] >> j) & 1;
     }
 
     // OT PHASE
@@ -180,47 +175,8 @@ public class PReceiver {
         }
     }
 
-    /*
-    INCORRECT FOR THE MOMENT
-
-    // Method to return an encrypted message of size m using AES in Counter Mode
-    // Why of size m? Because G: {0,1}^k -> {0,1}^m
-    public byte[] AES_CTR_Generator(int m, byte[] k0) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, ShortBufferException {
-
-        byte[] keyBytes = new byte[] { (byte) 0x36, (byte) 0xf1, (byte) 0x83,
-                (byte) 0x57, (byte) 0xbe, (byte) 0x4d, (byte) 0xbd,
-                (byte) 0x77, (byte) 0xf0, (byte) 0x50, (byte) 0x51,
-                (byte) 0x5c, 0x73, (byte) 0xfc, (byte) 0xf9, (byte) 0xf2 };
-
-        byte[] ivBytes = new byte[] { (byte) 0x69, (byte) 0xdd, (byte) 0xa8,
-                (byte) 0x45, (byte) 0x5c, (byte) 0x7d, (byte) 0xd4,
-                (byte) 0x25, (byte) 0x4b, (byte) 0xf3, (byte) 0x53,
-                (byte) 0xb7, (byte) 0x73, (byte) 0x30, (byte) 0x4e, (byte) 0xec };
-
-        // Initialisation
-        SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
-
-        // Mode
-        Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec);
-
-        return cipher.doFinal(k0);
-    }
-    */
-
     // Method to set the tArray
     public void setTArray() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, ShortBufferException, FactoriesException {
-
-        /*
-        // Testing the consistency of the PRG generator
-        for (int i = 0; i < 5; i++) {
-           String array = Arrays.toString(SCAPI_PRG(m, k0Array[1]));
-           int length = SCAPI_PRG(m, k0Array[1]).length;
-           System.out.println("Length: " + length + " Array: " + array);
-        }
-        System.out.println("======================");
-        */
 
         for (int i = 0; i < k0Array.length; i++) {
             t0Array[i] = GlobalMethods.SCAPI_PRG(m, k0Array[i]);
@@ -311,40 +267,109 @@ public class PReceiver {
 
     }
 
-    /*
-    // OT EXTENSION PHASE
-    // Method for sending the uArray during the OT EXTENSION PHASE
-    public void uArrayTransferSender() throws DuplicatePartyException, IOException, TimeoutException, SecurityLevelException, NoSuchAlgorithmException {
+    // Method to create the tj array using ArrayList
+    public void setT0JArray() throws IOException {
 
-        EncryptedChannel encryptedChannel = encryptedChannelCreation(); // Create the channel object
-        ScEncryptThenMac encScheme = new ScEncryptThenMac();
-        EncryptedChannel encryptedTCPChannel = new EncryptedChannel(encryptedChannel, encScheme);
+        ArrayList<Byte> arrayList = new ArrayList<>();
 
-        for (int i = 0; i < l; i++) {
-            encryptedTCPChannel.send(uArray[i]);
-            System.out.println("Success!");
+        int bitCounter = 0;
+        int mCounter = 0;
+
+        for (int j = 0; j < m; j++) {
+
+            arrayList.clear();
+
+            for (int i = 0; i < l; i++) {
+
+                int x = (GlobalMethods.readBit(t0Array[i], bitCounter));
+                arrayList.add((byte) x);
+
+            }
+
+            System.out.println("\nThe converted arrayList to a ByteArray is: " + GlobalMethods.arrayListToByteArray(arrayList));
+            System.out.println("The length is: " + GlobalMethods.arrayListToByteArray(arrayList).length);
+            System.out.println("The converted arrayList to a ByteArray is (in String format): " + Arrays.toString(GlobalMethods.arrayListToByteArray(arrayList)));
+
+            t0jArray[mCounter] = GlobalMethods.arrayListToByteArray(arrayList);
+
+            bitCounter++;
+            mCounter++;
+
+        }
+    }
+
+    // Method to create the tj array using ArrayList
+    public void setT1JArray() throws IOException {
+
+        ArrayList<Byte> arrayList = new ArrayList<>();
+
+        int bitCounter = 0;
+        int mCounter = 0;
+
+        for (int j = 0; j < m; j++) {
+
+            arrayList.clear();
+
+            for (int i = 0; i < l; i++) {
+
+                int x = (GlobalMethods.readBit(t1Array[i], bitCounter));
+                arrayList.add((byte) x);
+
+            }
+
+            System.out.println("\nThe converted arrayList to a ByteArray is: " + GlobalMethods.arrayListToByteArray(arrayList));
+            System.out.println("The length is: " + GlobalMethods.arrayListToByteArray(arrayList).length);
+            System.out.println("The converted arrayList to a ByteArray is (in String format): " + Arrays.toString(GlobalMethods.arrayListToByteArray(arrayList)));
+
+            t1jArray[mCounter] = GlobalMethods.arrayListToByteArray(arrayList);
+
+            bitCounter++;
+            mCounter++;
+
+        }
+    }
+
+    // Method to print the tj array
+    public void printTJArray() {
+
+        System.out.println("\nBelow is the t0JArray:\n");
+
+        for (int i = 0; i < m; i++) {
+            System.out.println("Length: " + t0jArray[i].length);
+            System.out.println("Output: " + t0jArray[i]);
+            System.out.println("Output (String): " + Arrays.toString(t0jArray[i]));
         }
 
-        encryptedTCPChannel.close();
+
+        System.out.println("\nBelow is the t1JArray:\n");
+
+        for (int i = 0; i < m; i++) {
+            System.out.println("Length: " + t1jArray[i].length);
+            System.out.println("Output: " + t1jArray[i]);
+            System.out.println("Output (String): " + Arrays.toString(t1jArray[i]));
+        }
 
     }
 
-    // Method to create a encrypted channel
-    public EncryptedChannel encryptedChannelCreation() throws DuplicatePartyException, TimeoutException {
-        // Prepare the parties list.
-        LoadSocketParties loadParties = new LoadSocketParties("SocketParties.properties");
-        List<PartyData> listOfParties = loadParties.getPartiesList();
-
-        TwoPartyCommunicationSetup commSetup = new SocketCommunicationSetup(listOfParties.get(1), listOfParties.get(0));
-
-        // Call the prepareForCommunication function to establish one connection within 2000000 milliseconds.
-        Map<String, Channel> connections = commSetup.prepareForCommunication(1, 2000000);
-
-        // Return the channel to the calling application. There is only one created channel.
-        return (EncryptedChannel) connections.values().toArray()[0];
+    // TEST method
+    public void test_printR0() {
+        //System.out.println("This is a TEST method!");
+        System.out.println("choiceBits[0] = " + GlobalMethods.readBit(choiceBits, 0));
     }
 
-    */
+    // TEST method
+    public void test_printT0() {
+        //System.out.println("This is a TEST method!");
+        System.out.println("This is the result of T0[0]: " + Arrays.toString(t0Array[0]));
+    }
+
+    // TEST method
+    public void test_printTJArray() {
+        //System.out.println("This is a TEST method!");
+        System.out.println("This is the result of TJ[0]: " + Arrays.toString(t0jArray[0]));
+        System.out.println("This is the result of TJ[1]: " + Arrays.toString(t0jArray[1]));
+    }
+
 }
 
 

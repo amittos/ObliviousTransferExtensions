@@ -13,24 +13,22 @@ import edu.biu.scapi.interactiveMidProtocols.ot.OTROutput;
 import edu.biu.scapi.interactiveMidProtocols.ot.oneSidedSimulation.OTOneSidedSimDDHOnByteArrayReceiver;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.security.InvalidKeyException;
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
-public class PSender {
+public class PSender implements Serializable {
 
+    public static byte[] sArray; // Choice bits for the OT PHASE
+    public static byte[][] qArray; // Array which contains the result of [(Si * Ui) XOR G(Ksi)] for the OT EXTENSION PHASE (Array of byte[])
+    public static byte[][] qjArray; // Array which contains the [...]
     private int m, n, k, l;
     private byte[][] x0Array; // Array which contains the initial objects (Array of byte[])
     private byte[][] x1Array; // Array which contains the initial objects (Array of byte[])
-    private byte[] sArray; // Choice bits for the OT PHASE
     private byte[][] kArray; // The array which contains the keys received via the OT PHASE (Array of byte[])
     private byte[][] uArray; // Array which contains the result of [G(k0) XOR G(k1) XOR choiceBits] to be sent to the Sender for the OT EXTENSION PHASE (Array of byte[])
-    private byte[][] qArray; // Array which contains the result of [(Si * Ui) XOR G(Ksi)] for the OT EXTENSION PHASE (Array of byte[])
-    private byte[][] qjArray; // Array which contains the [...]
 
     // Default Constructor
     public PSender() {
@@ -44,7 +42,7 @@ public class PSender {
         kArray = new byte[l][];
         uArray = new byte[l][];
         qArray = new byte[l][];
-        qjArray = new byte[l][];
+        qjArray = new byte[m][];
     }
 
     // Overloaded Constructor
@@ -145,18 +143,10 @@ public class PSender {
 
         int counter = 0;
         for (int i = 0; i < l; i++) {
-            System.out.println(readBit(sArray, i));
+            System.out.println(GlobalMethods.readBit(sArray, i));
             counter++;
         }
         System.out.println("Number of bits: " + counter);
-    }
-
-    // Method to read the value of a bit (0 or 1) of a byte array
-    // http://stackoverflow.com/a/34095548/873309
-    int readBit(byte[] b, int x) {
-        int i = x / 8;
-        int j = x % 8;
-        return (b[i] >> j) & 1;
     }
 
     // OT PHASE
@@ -175,7 +165,7 @@ public class PSender {
         for (int i = 0; i < l; i++) {
 
             //System.out.println("The bit is: " + readBit(sArray, i));
-            byte sigma = (byte) readBit(sArray, i); // Reads the input for the receiver from the generated sArray
+            byte sigma = (byte) GlobalMethods.readBit(sArray, i); // Reads the input for the receiver from the generated sArray
 
             // Create the input using sigma
             // Concrete implementation of OT receiver input.
@@ -248,7 +238,7 @@ public class PSender {
     public void setQArray() throws InvalidKeyException, FactoriesException {
 
         for (int i = 0; i < l; i++) {
-            if (readBit(sArray, i) == 0) {
+            if (GlobalMethods.readBit(sArray, i) == 0) {
                 //System.out.println("sArray[" + i + "]: " + sArray[i]);
                 //System.out.println("qArray[i] = SCAPI_PRG(m, kArray[i])");
                 qArray[i] = GlobalMethods.SCAPI_PRG(m, kArray[i]);
@@ -268,41 +258,60 @@ public class PSender {
         }
     }
 
-/*
-
-    // NOT TESTED YET
-    // OT EXTENSION PHASE
-    // Method to set the qjArray
+    // Method to create the qj array using ArrayList
     public void setQJArray() throws IOException {
 
-        List<Integer> list = new ArrayList<>();
-        int counter = 0;
+        ArrayList<Byte> arrayList = new ArrayList<>();
+
+        int bitCounter = 0;
+        int mCounter = 0;
 
         for (int j = 0; j < m; j++) {
 
+            arrayList.clear();
+
             for (int i = 0; i < l; i++) {
-                int x = (readBit(qArray[i], counter));
-                list.add(x);
 
-                // write to byte array
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                DataOutputStream out = new DataOutputStream(baos);
-                for (int element : list) {
-                    out.writeUTF(Integer.toString(element));
-                }
-
-                byte[] bytes = baos.toByteArray();
-
+                int x = (GlobalMethods.readBit(qArray[i], bitCounter));
+                arrayList.add((byte) x);
 
             }
 
-            qjArray[i] = bytes;
-            counter++;
+            System.out.println("\nThe converted arrayList to a ByteArray is: " + GlobalMethods.arrayListToByteArray(arrayList));
+            System.out.println("The length is: " + GlobalMethods.arrayListToByteArray(arrayList).length);
+            System.out.println("The converted arrayList to a ByteArray is (in String format): " + Arrays.toString(GlobalMethods.arrayListToByteArray(arrayList)));
+
+            qjArray[mCounter] = GlobalMethods.arrayListToByteArray(arrayList);
+
+            bitCounter++;
+            mCounter++;
+
         }
     }
 
-*/
+    // Method to print the qj array
+    public void printQJArray() {
+        System.out.println("\nBelow is the qjArray:\n");
+        for (int i = 0; i < m; i++) {
+            System.out.println("Length: " + qjArray[i].length);
+            System.out.println("Output: " + qjArray[i]);
+            System.out.println("Output (String): " + Arrays.toString(qjArray[i]));
+        }
 
+    }
+
+    // TEST method
+    public void test_printQJArray() {
+        //System.out.println("This is a TEST method!");
+        System.out.println("This is the result of QJ[0]: " + Arrays.toString(qjArray[0]));
+    }
+
+    // TEST method
+    public void test_printQ0() {
+        //System.out.println("This is a TEST method!");
+        System.out.println("S[0] = " + GlobalMethods.readBit(sArray, 0));
+        System.out.println("This is the result of Q[0]: " + Arrays.toString(qArray[0]));
+    }
 
 }
 

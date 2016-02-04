@@ -41,21 +41,18 @@ public class SenderMain {
         Ps.setQArray();
         Ps.printQArray();
 
-        /*
-        byte[] newByte = new byte[16]; // n = 128 bits, so 16 bytes (128/8)
-        new Random().nextBytes(newByte);
+        Ps.setQJArray();
 
-        for (int i = 0; i < newByte.length*8; i++) {
-            System.out.println("Pos: " + i + ", Bit: " + readBit(newByte, i));
-        }
-        */
+        System.out.println("\n\n===============================================");
+        System.out.println("\t\t\t\t\tTESTING");
+        System.out.println("===============================================\n");
+
+        Ps.test_printQ0();
+        Ps.test_printQJArray();
+
+        System.out.println("\n===============================================");
+
+        //Ps.printQJArray();
 
     }
-
-    static int readBit(byte[] b, int x) {
-        int i = x / 8;
-        int j = x % 8;
-        return (b[i] >> j) & 1;
-    }
-
 }
