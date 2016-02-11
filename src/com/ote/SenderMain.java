@@ -29,7 +29,7 @@ public class SenderMain {
         Ps.printSArray();
 
         Ps.obliviousTransferReceiver(); // Initiate the OT between the Sender and the Receiver. The OT will run l times.
-        //Ps.printKArray();
+        Ps.printKArray();
 
         //=====================================================
         //                  OT EXTENSION PHASE
@@ -41,8 +41,14 @@ public class SenderMain {
         Ps.setQArray();
         Ps.printQArray();
 
-        Ps.setQJArray();
+        Ps.setQjArray();
         Ps.printQJArray();
+
+        Ps.setYArrays();
+        Ps.printYArrays();
+
+        Ps.yArrayTransferSender();
+        Ps.printXArray();
 
     }
 }

@@ -7,7 +7,8 @@ import edu.biu.scapi.tools.Factories.PrgFactory;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
-import java.util.List;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class GlobalMethods {
 
@@ -36,19 +37,14 @@ public class GlobalMethods {
         return outBytes;
     }
 
-    // Method to convert ArrayList<Byte> into a byte[] (byte array)
-    // http://stackoverflow.com/q/6860055/873309
-    public static byte[] arrayListToByteArray(List<Byte> in) {
-        final int n = in.size();
-        byte ret[] = new byte[n];
-        for (int i = 0; i < n; i++) {
-            ret[i] = in.get(i);
-        }
-        return ret;
+    // Method to create a SHA1 sum of a byte array
+    // http://stackoverflow.com/a/1515495/873309
+    public static byte[] SHA1(byte[] convertMe) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
+        return md.digest(convertMe);
     }
 
 }
-
 
 /*
     //INCORRECT FOR THE MOMENT
