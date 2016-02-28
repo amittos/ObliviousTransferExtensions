@@ -20,5 +20,6 @@
     </orderEntry>
     <orderEntry type="library" exported="" name="JARs" level="application" />
     <orderEntry type="library" exported="" name="guava-18.0" level="project" />
+    <orderEntry type="library" exported="" name="Simon" level="project" />
   </component>
 </module>

@@ -15,7 +15,6 @@ import edu.biu.scapi.interactiveMidProtocols.ot.oneSidedSimulation.OTOneSidedSim
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -25,31 +24,40 @@ import java.util.concurrent.TimeoutException;
 public class PSender {
 
     private int m, n, k, l;
+    private byte[][] x0Array; // Array which contains the initial objects (Array of byte[])
+    private byte[][] x1Array; // Array which contains the initial objects (Array of byte[])
     private byte[] sArray; // Choice bits for the OT PHASE
     private byte[][] qArray; // Array which contains the result of [(Si * Ui) XOR G(Ksi)] for the OT EXTENSION PHASE (Array of byte[])
     private byte[][] qjArray; // Array which contains the [...]
-    private byte[][] x0Array; // Array which contains the initial objects (Array of byte[])
-    private byte[][] x1Array; // Array which contains the initial objects (Array of byte[])
     private byte[][] kArray; // The array which contains the keys received via the OT PHASE (Array of byte[])
     private byte[][] uArray; // Array which contains the result of [G(k0) XOR G(k1) XOR choiceBits] to be sent to the Sender for the OT EXTENSION PHASE (Array of byte[])
     private byte[][] y0Array; // This array contains the result of [x0Array XOR H(qjArray)], to be sent to PReceiver. The size
     private byte[][] y1Array; // This array contains the result of [x1Array XOR (H(qjArray) XOR sArray)], to be sent to PReceiver
 
+    private byte[][] t0Array;
+    private byte[][] t0jArray;
+    private byte[] rArray;
+
     // Default Constructor
     public PSender() {
-        m = 128;
-        n = 160;
-        k = 128;
+        m = 4096; // The number of the pairs of the Sender, the number of the choiceBits of the Receiver
+        n = 160; // The size of each X in bits, also the size of the hash output. Must be the same in order to be XORed
+        k = 128; // Security parameter
         l = 128;
-        x0Array = new byte[m][];
-        x1Array = new byte[m][];
-        sArray = new byte[l / 8]; // We need l bits, so l/8 bytes
-        kArray = new byte[l][];
-        uArray = new byte[l][];
-        qArray = new byte[l][];
-        qjArray = new byte[m][];
-        y0Array = new byte[m][];
-        y1Array = new byte[m][];
+        x0Array = new byte[m][]; // This array of byte[] has size m which means that it holds m inputs of size n
+        x1Array = new byte[m][]; // This array of byte[] has size m which means that it holds m inputs of size n
+        sArray = new byte[l / 8]; // The sArray has a size of l bits which means l/8 bytes
+        kArray = new byte[l][]; // This array stores the keys received from Receiver. It has a size of l
+        uArray = new byte[l][]; // This array stores the Ui [G(k0) XOR G(k1) XOR r] received from Receiver. It has a size of l
+        qArray = new byte[l][]; // This array stores the Qi [(Si * Ui) XOR G(Ki^Si)]. It has a size of l
+        qjArray = new byte[m][]; // This array is the transposition of the Qi array. It has a size of m because qArray would be l*m. Therefore the transposed table must have width of size m
+        y0Array = new byte[m][]; // This array has a size of m because that's the size of the original array (xArray)
+        y1Array = new byte[m][]; // This array has a size of m because that's the size of the original array (xArray)
+        /*
+        t0jArray = new byte[l][];
+        rArray = new byte[l/8];
+        t0Array = new byte[l][];
+        */
     }
 
     // Overloaded Constructor
@@ -93,9 +101,15 @@ public class PSender {
     }
 
     // Method to get the XOR result between two byte arrays
+    // http://stackoverflow.com/a/24487074/873309
     static byte[] xorByteArrays(byte[] a, byte[] b) {
 
         byte[] result = new byte[Math.min(a.length, b.length)];
+
+        if (!(a.length == b.length)) {
+            System.out.println("Lengths NOT equal");
+            System.exit(3);
+        }
 
         for (int i = 0; i < result.length; i++) {
             result[i] = (byte) (((int) a[i]) ^ ((int) b[i]));
@@ -131,49 +145,43 @@ public class PSender {
 
     // Method to printXArray which contains the initial objects of PSender
     public void printXArray() {
-
-        System.out.println("Below are the initial objects of PSender which will be sent to PReceiver \n\nX0 array:\n");
+        System.out.println("\n=========================================================================================");
+        System.out.println("\tBelow are the initial objects of PSender which will be sent to PReceiver");
+        System.out.println("=========================================================================================\n");
+        System.out.println("X0 Array:\n");
 
         for (int i = 0; i < x0Array.length; i++) {
-            System.out.println(Arrays.toString(x0Array[i]));
+            System.out.println("x0Array[" + i + "] = " + Arrays.toString(x0Array[i]));
         }
 
         System.out.println("\nX1 array:\n");
 
         for (int i = 0; i < x1Array.length; i++) {
-            System.out.println(Arrays.toString(x1Array[i]));
+            System.out.println("x1Array[" + i + "] = " + Arrays.toString(x1Array[i]));
         }
     }
 
-    // Method to get String from byte array
-    // http://stackoverflow.com/questions/6684665/java-byte-array-to-string-to-byte-array
-    public String getStringFromBytesArray(byte[] output) {
-
-        String response = Arrays.toString(output);
-        String[] byteValues = response.substring(1, response.length() - 1).split(",");
-        byte[] bytes = new byte[byteValues.length];
-        for (int i = 0, len = bytes.length; i < len; i++) {
-            bytes[i] = Byte.parseByte(byteValues[i].trim());
-        }
-
-        String result = new String(bytes);
-
-        return result;
-    }
-
-    // OT PHASE
-    // REMEMBER: During the OT PHASE the roles are inverted
-    // The Sender acts as the Receiver and the Receiver as a Sender
     // Method to create the sArray of size l
     public void setSArray() {
-        new SecureRandom().nextBytes(sArray);
+
+        //new SecureRandom().nextBytes(sArray);
+
+        int[] array = new int[l];
+        //Random random = new Random();
+
+        for (int i = 0; i < l; i++) {
+            array[i] = 0;
+        }
+
+        sArray = intArrayToByteArray(array);
+
     }
 
     // Method to print the sArray of size l
     public void printSArray() {
-
-        System.out.println("\nBelow are the choice bits created by PSender to use in the OT Phase.\n");
-
+        System.out.println("\n=========================================================================================");
+        System.out.println("\tBelow are the choice bits created by PSender to use in the OT Phase.");
+        System.out.println("=========================================================================================\n");
         int counter = 0;
         for (int i = 0; i < l; i++) {
             System.out.println(readBit(sArray, i));
@@ -182,18 +190,21 @@ public class PSender {
         System.out.println("Number of bits: " + counter);
     }
 
-    // OT PHASE
-    // REMEMBER: During the OT PHASE the roles are inverted
-    // The Sender acts as the Receiver and the Receiver acts as the Sender
     // Method for the PSender to use OT as a receiver (OT PHASE). The method will run l times
     public void obliviousTransferReceiver() throws DuplicatePartyException, IOException, TimeoutException, ClassNotFoundException {
 
-        System.out.println("\nOblivious Transfer starting now...\n");
-
+        // OT PHASE
+        // REMEMBER: During the OT PHASE the roles are inverted
+        // The Sender acts as the Receiver and the Receiver acts as the Sender
+        System.out.println("\n=========================================================================================");
+        System.out.println("\t\t\t\tOblivious Transfer for the OT phase starting now...");
+        System.out.println("=========================================================================================\n");
         // Concrete implementation of the receiver side in oblivious transfer based on the DDH assumption that achieves
         // privacy for the case that the sender is corrupted and simulation in the case that the receiver is corrupted.
         OTOneSidedSimDDHOnByteArrayReceiver receiver = new OTOneSidedSimDDHOnByteArrayReceiver();
         OTROutput output = null; // Create the output in the general OTROutput format
+
+        Channel channel = obliviousTransferChannelCreation(); // Create the channel
 
         for (int i = 0; i < l; i++) {
 
@@ -205,8 +216,6 @@ public class PSender {
             // In the basic scenario, the receiver gets a single bit representing 0/1.
             OTRBasicInput input = new OTRBasicInput(sigma);
 
-            Channel channel = obliviousTransferChannelCreation(); // Create the channel
-
             output = receiver.transfer(channel, input); // Get the output
             OTOnByteArrayROutput newOutput = (OTOnByteArrayROutput) output; // Convert the general OTROutput to the specific OTOnByteArrayROutput a.k.a. a byte array
 
@@ -215,11 +224,16 @@ public class PSender {
             kArray[i] = newOutput.getXSigma(); // Store the keys to kArray
 
         }
+        System.out.println("=========================================================================================");
+        System.out.println("\t\t\t\t\t\tOblivious Transfer completed.");
+        System.out.println("=========================================================================================");
     }
 
     // Method to print the kArray
     public void printKArray() {
-        System.out.println("\nBelow is the kArray which contains the objects obtained by PReceiver for the OT Phase\n");
+        System.out.println("\n=========================================================================================");
+        System.out.println("Below is the kArray which contains the objects obtained by PReceiver for the OT Phase");
+        System.out.println("=========================================================================================\n");
         for (int i = 0; i < l; i++) {
             System.out.println("kArray length: " + kArray[i].length);
             System.out.println("kArray output: " + Arrays.toString(kArray[i]));
@@ -227,19 +241,23 @@ public class PSender {
 
     }
 
-    // OT EXTENSION PHASE
-    // Method for sending the uArray during the OT EXTENSION PHASE
     // This is a PLAIN channel. No security is required.
     public void uArrayTransferReceiver() throws TimeoutException, DuplicatePartyException, IOException, ClassNotFoundException {
 
-        System.out.println("\nTransfer begins now...\n");
+        // OT EXTENSION PHASE
+        // Method for sending the uArray during the OT EXTENSION PHASE
+        System.out.println("\n=========================================================================================");
+        System.out.println("\t\t\t\t\t\tUArray Transfer begins now...");
+        System.out.println("=========================================================================================\n");
         Channel plainTCPChannel = plainTCPChannelCreation();
 
         for (int i = 0; i < l; i++) {
             uArray[i] = (byte[]) plainTCPChannel.receive();
         }
         plainTCPChannel.close();
-        System.out.println("\nTransfer completed.\n");
+        System.out.println("\n=========================================================================================");
+        System.out.println("\t\t\t\t\t\t\tTransfer completed.");
+        System.out.println("=========================================================================================\n");
     }
 
     // Method to create a plain channel
@@ -261,24 +279,22 @@ public class PSender {
 
     // Method to print the uArray
     public void printUArray() {
-        System.out.println("\nBelow is the uArray [G(k0) XOR G(k1) XOR ChoiceBits] which is received by PReveiver via a plain channel\n");
+        System.out.println("\n=========================================================================================");
+        System.out.println("\t\tBelow is the uArray received by PReceiver via a plain channel");
+        System.out.println("=========================================================================================\n");
         for (int i = 0; i < l; i++) {
             System.out.println("Length: " + uArray[i].length + ", Output: " + Arrays.toString(uArray[i]));
         }
     }
 
-    // OT EXTENSION PHASE
     // Method to set the qArray which contains the result of [(Si * Ui) XOR G(Ksi)]
     public void setQArray() throws InvalidKeyException, FactoriesException {
 
-        for (int i = 0; i < m; i++) {
+        // OT EXTENSION PHASE
+        for (int i = 0; i < l; i++) {
             if (readBit(sArray, i) == 0) {
-                //System.out.println("sArray[" + i + "]: " + sArray[i]);
-                //System.out.println("qArray[i] = SCAPI_PRG(m, kArray[i])");
                 qArray[i] = GlobalMethods.SCAPI_PRG(m / 8, kArray[i]);
             } else {
-                //System.out.println("sArray[" + i + "]: " + sArray[i]);
-                //System.out.println("qArray[i] = uArray[i] XOR SCAPI_PRG(m, kArray[i])");
                 qArray[i] = xorByteArrays(uArray[i], GlobalMethods.SCAPI_PRG(m / 8, kArray[i]));
             }
         }
@@ -287,7 +303,9 @@ public class PSender {
     // Method to print the qArray
     public void printQArray() {
         int counter = 0;
-        System.out.println("\nBelow is the qArray which contains the result of [(Si * Ui) XOR G(Ksi)]\n");
+        System.out.println("\n=========================================================================================");
+        System.out.println("\t\tBelow is the qArray which contains the result of [(Si * Ui) XOR G(Ksi)]");
+        System.out.println("=========================================================================================\n");
         for (int i = 0; i < l; i++) {
             System.out.println(counter + ": Length: " + qArray[i].length + ", Output: " + Arrays.toString(qArray[i]));
             counter++;
@@ -304,21 +322,23 @@ public class PSender {
         int[][] array = new int[height][width]; // Make a two-dimensional int array to put each bit of the byte arrays
 
         // Transposition of the byte array to the int array
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                array[y][x] = readBit(qArray[x], y);
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                array[j][i] = readBit(qArray[i], j); // <------------------------------- REVERSED array[i][j] = readBit(qArray[j], i);
             }
         }
 
         // Convert each int array to byte array and insert it in qjArray
-        for (int i = 0; i < l; i++) {
+        for (int i = 0; i < m; i++) {
             qjArray[i] = intArrayToByteArray(array[i]);
         }
     }
 
     // Method to print the qj array
     public void printQJArray() {
-        System.out.println("\nBelow is the qjArray:\n");
+        System.out.println("\n=========================================================================================");
+        System.out.println("\t\t\t\t\t\t\tBelow is the qjArray:");
+        System.out.println("=========================================================================================\n");
         for (int i = 0; i < m; i++) {
             System.out.println("Length: " + qjArray[i].length);
             System.out.println("Output: " + qjArray[i]);
@@ -330,72 +350,24 @@ public class PSender {
     // Method the set both yArrays (y0Array, y1Array)
     public void setYArrays() throws NoSuchAlgorithmException {
 
-        byte[] result;
-
-        // Set y0Array
         for (int i = 0; i < m; i++) {
-
-            System.out.println("\n\n=============================================");
-
-            System.out.println("x0Array length: " + x0Array[i].length);
-            System.out.println("x0Array output: " + Arrays.toString(x0Array[i]));
-
-            System.out.println("qjArray length: " + qjArray[i].length);
-            System.out.println("qjArray output: " + Arrays.toString(qjArray[i]));
-
-            System.out.println("SHA1 length: " + GlobalMethods.SHA1(qjArray[i]).length);
-            System.out.println("SHA1 output: " + Arrays.toString(GlobalMethods.SHA1(qjArray[i])));
-
+            System.out.println("qjArray[" + i + "]): " + Arrays.toString(qjArray[i]));
             y0Array[i] = xorByteArrays(x0Array[i], GlobalMethods.SHA1(qjArray[i]));
-
-            System.out.println("y0Array length: " + y0Array[i].length);
-            System.out.println("y0Array output: " + Arrays.toString(y0Array[i]));
-
-            System.out.println("\n=============================================");
-
+            //y1Array[i] = xorByteArrays(x1Array[i], GlobalMethods.SHA1(xorByteArrays(sArray, qjArray[i])));
+            y1Array[i] = xorByteArrays(x1Array[i], GlobalMethods.SHA1(qjArray[i]));
         }
-
-        // Set y1Array
-        for (int i = 0; i < m; i++) {
-
-            System.out.println("\n\n=============================================\n");
-
-            System.out.println("qjArray length: " + qjArray[i].length);
-            System.out.println("qjArray output: " + Arrays.toString(qjArray[i]));
-
-            System.out.println("sArray length: " + sArray.length);
-            System.out.println("sArray output: " + Arrays.toString(sArray));
-
-            result = xorByteArrays(qjArray[i], sArray);
-
-            System.out.println("result length: " + result.length);
-            System.out.println("result output: " + Arrays.toString(result));
-
-            System.out.println("x1Array length: " + x1Array[i].length);
-            System.out.println("x1Array output: " + Arrays.toString(x1Array[i]));
-
-            System.out.println("SHA1 length: " + GlobalMethods.SHA1(result).length);
-            System.out.println("SHA1 output: " + Arrays.toString(GlobalMethods.SHA1(result)));
-
-            y1Array[i] = xorByteArrays(x1Array[i], GlobalMethods.SHA1(result));
-
-            System.out.println("y1Array length: " + y1Array[i].length);
-            System.out.println("y1Array output: " + Arrays.toString(y1Array[i]));
-
-            System.out.println("\n=============================================");
-
-        }
-
     }
 
     // Method to print both yArrays
     public void printYArrays() {
-        System.out.println("Below are the yArrays:");
-        System.out.println("\ny0Array:\n");
+        System.out.println("\n=========================================================================================");
+        System.out.println("\t\t\t\t\t\t\tBelow are the yArrays:");
+        System.out.println("=========================================================================================\n");
+        System.out.println("Y0 Array:\n");
         for (int i = 0; i < m; i++) {
             System.out.println("Length: " + y0Array[i].length + ", Output: " + Arrays.toString(y0Array[i]));
         }
-        System.out.println("\ny1Array:\n");
+        System.out.println("\nY1 Array:\n");
         for (int i = 0; i < m; i++) {
             System.out.println("Length: " + y1Array[i].length + ", Output: " + Arrays.toString(y1Array[i]));
         }
@@ -404,8 +376,9 @@ public class PSender {
 
     // Method to transfer the yArrays to PReceiver
     public void yArrayTransferSender() throws TimeoutException, DuplicatePartyException, IOException {
-
-        System.out.println("\nTransfer of the yArrays begins now...\n");
+        System.out.println("\n=========================================================================================");
+        System.out.println("\t\t\t\t\tTransfer of the yArrays begins now...");
+        System.out.println("=========================================================================================\n");
         Channel plainTCPChannel = plainTCPChannelCreation();
 
         for (int i = 0; i < m; i++) {
@@ -417,9 +390,188 @@ public class PSender {
         }
 
         plainTCPChannel.close();
-        System.out.println("\nTransfer completed.\n");
+        System.out.println("\n=========================================================================================");
+        System.out.println("\t\t\t\t\t\t\tTransfer completed");
+        System.out.println("=========================================================================================\n");
 
     }
+
+    //========================================================================================================
+    //                                              TEST AREA
+    //========================================================================================================
+
+    /*
+
+    public void t0ArrayTransferReceiver() throws TimeoutException, DuplicatePartyException, IOException, ClassNotFoundException {
+
+        // OT EXTENSION PHASE
+        // Method for sending the uArray during the OT EXTENSION PHASE
+
+        System.out.println("\nTransfer begins now...\n");
+        Channel plainTCPChannel = plainTCPChannelCreation();
+
+        for (int i = 0; i < l; i++) {
+            t0Array[i] = (byte[]) plainTCPChannel.receive();
+        }
+        plainTCPChannel.close();
+        System.out.println("\nTransfer completed.\n");
+    }
+
+    public void t0jArrayTransferReceiver() throws TimeoutException, DuplicatePartyException, IOException, ClassNotFoundException {
+
+        // OT EXTENSION PHASE
+        // Method for sending the uArray during the OT EXTENSION PHASE
+
+        System.out.println("\nTransfer begins now...\n");
+        Channel plainTCPChannel = plainTCPChannelCreation();
+
+        for (int i = 0; i < l; i++) {
+            t0jArray[i] = (byte[]) plainTCPChannel.receive();
+        }
+        plainTCPChannel.close();
+        System.out.println("\nTransfer completed.\n");
+    }
+
+    public void printT0JArray() {
+
+        System.out.println("\nt0jArray: \n");
+
+        for (int i = 0; i < t0jArray.length; i++) {
+            System.out.println("t0jArray[" + i + "] length = " + t0jArray[i].length);
+            System.out.println("t0jArray[" + i + "] output = " + Arrays.toString(t0jArray[i]));
+        }
+
+
+    }
+
+    public void printRArray() {
+
+        System.out.println("These are the Choice Bits of PReceiver.\n");
+
+        int counter = 0;
+        for (int i = 0; i < m; i++) {
+            System.out.println(readBit(rArray, i));
+            counter++;
+        }
+        System.out.println("Number of bits: " + counter);
+
+    }
+
+    public void rArrayTransferReceiver() throws TimeoutException, DuplicatePartyException, IOException, ClassNotFoundException {
+
+        // OT EXTENSION PHASE
+        // Method for sending the uArray during the OT EXTENSION PHASE
+
+        System.out.println("\nTransfer begins now...\n");
+        Channel plainTCPChannel = plainTCPChannelCreation();
+
+        rArray = (byte[]) plainTCPChannel.receive();
+
+        plainTCPChannel.close();
+        System.out.println("\nTransfer completed.\n");
+    }
+
+    public void testing() {
+
+        System.out.println("==================================================");
+        System.out.println("\t\t\t\tTESTING Qi");
+        System.out.println("==================================================");
+
+        for (int i = 0; i < l; i++) {
+
+            if (readBit(sArray, i) == 0) {
+
+                System.out.println("\nsArray[" + i + "] = " + readBit(sArray, i));
+                System.out.println("So, qi = ti");
+
+                if (Arrays.equals(qArray[i], t0Array[i])) {
+                    System.out.println("qArray[" + i + "]: " + Arrays.toString(qArray[i]));
+                    System.out.println("t0Array[" + i + "]: " + Arrays.toString(t0Array[i]));
+                    System.out.println("TRUE");
+                } else {
+                    System.out.println("qArray[" + i + "]: " + Arrays.toString(qArray[i]));
+                    System.out.println("t0Array[" + i + "]: " + Arrays.toString(t0Array[i]));
+                    System.out.println("FALSE");
+                }
+
+            } else if (readBit(sArray, i) == 1) {
+
+                System.out.println("\nsArray[" + i + "] = " + readBit(sArray, i));
+                System.out.println("So, qi = r XOR ti");
+
+                if (Arrays.equals(qArray[i], xorByteArrays(rArray, t0Array[i]))) {
+                    System.out.println("rArray: " + Arrays.toString(rArray));
+                    System.out.println("t0Array[" + i + "]: " + Arrays.toString(t0Array[i]));
+                    System.out.println("qArray[" + i + "]: " + Arrays.toString(qArray[i]));
+                    System.out.println("xorByteArrays(rArray, t0Array[i]): " + Arrays.toString(xorByteArrays(rArray, t0Array[i])));
+                    System.out.println("TRUE");
+                } else {
+                    System.out.println("rArray: " + Arrays.toString(rArray));
+                    System.out.println("t0Array[" + i + "]: " + Arrays.toString(t0Array[i]));
+                    System.out.println("qArray[" + i + "]: " + Arrays.toString(qArray[i]));
+                    System.out.println("xorByteArrays(rArray, t0Array[i]): " + Arrays.toString(xorByteArrays(rArray, t0Array[i])));
+                    System.out.println("FALSE");
+                }
+
+            }
+
+        }
+
+        System.out.println("==================================================");
+        System.out.println("\t\t\t\tTESTING QJ");
+        System.out.println("==================================================");
+
+        for (int i = 0; i < l; i++) {
+
+            if (readBit(rArray, i) == 0) {
+
+                System.out.println("\nrj = " + readBit(rArray, i));
+                System.out.println("So, qj = tj");
+
+                if (Arrays.equals(qjArray[i], t0jArray[i])) {
+                    System.out.println("qjArray[" + i + "]: " + Arrays.toString(qjArray[i]));
+                    System.out.println("t0jArray[" + i + "]: " + Arrays.toString(t0jArray[i]));
+                    System.out.println("TRUE");
+                } else {
+                    System.out.println("qjArray[" + i + "]: " + Arrays.toString(qjArray[i]));
+                    System.out.println("t0jArray[" + i + "]: " + Arrays.toString(t0jArray[i]));
+                    System.out.println("FALSE");
+                }
+
+            } else if (readBit(rArray, i) == 1) {
+
+                System.out.println("\nrj = " + readBit(rArray, i));
+                System.out.println("So, qj = s XOR tj");
+
+                if (Arrays.equals(xorByteArrays(sArray, t0jArray[i]), qjArray[i])) {
+                    System.out.println("t0jArray[" + i + "]: " + Arrays.toString(t0jArray[i]));
+                    System.out.println("sArray: " + Arrays.toString(sArray));
+                    System.out.println("xorByteArrays(t0jArray[i], sArray)): " + Arrays.toString(xorByteArrays(t0jArray[i], sArray)));
+                    System.out.println("qjArray[" + i + "]: " + Arrays.toString(qjArray[i]));
+                    System.out.println("TRUE");
+                } else {
+                    System.out.println("t0jArray[" + i + "]: " + Arrays.toString(t0jArray[i]));
+                    System.out.println("sArray: " + Arrays.toString(sArray));
+                    System.out.println("xorByteArrays(t0jArray[i], sArray)): " + Arrays.toString(xorByteArrays(t0jArray[i], sArray)));
+                    System.out.println("qjArray[" + i + "]: " + Arrays.toString(qjArray[i]));
+                    System.out.println("FALSE");
+                }
+
+            }
+
+        }
+
+        System.out.println("==================================================");
+        System.out.println("\t\t\t\tEND OF TEST");
+        System.out.println("==================================================");
+
+    }
+
+    */
+
+    //========================================================================================================
+    //                                              TEST AREA
+    //========================================================================================================
 
 }
 

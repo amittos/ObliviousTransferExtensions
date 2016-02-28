@@ -44,6 +44,13 @@ public class GlobalMethods {
         return md.digest(convertMe);
     }
 
+    // Method to create a MD5 sum of a byte array
+    // http://stackoverflow.com/a/1515495/873309
+    public static byte[] MD5(byte[] convertMe) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        return md.digest(convertMe);
+    }
+
 }
 
 /*
