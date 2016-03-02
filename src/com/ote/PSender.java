@@ -15,6 +15,7 @@ import edu.biu.scapi.interactiveMidProtocols.ot.oneSidedSimulation.OTOneSidedSim
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -34,13 +35,13 @@ public class PSender {
     private byte[][] y0Array; // This array contains the result of [x0Array XOR H(qjArray)], to be sent to PReceiver. The size
     private byte[][] y1Array; // This array contains the result of [x1Array XOR (H(qjArray) XOR sArray)], to be sent to PReceiver
 
-    private byte[][] t0Array;
-    private byte[][] t0jArray;
-    private byte[] rArray;
+    //private byte[][] t0Array;
+    //private byte[][] t0jArray;
+    //private byte[] rArray;
 
     // Default Constructor
     public PSender() {
-        m = 4096; // The number of the pairs of the Sender, the number of the choiceBits of the Receiver
+        m = 393216; // The number of the pairs of the Sender, the number of the choiceBits of the Receiver
         n = 160; // The size of each X in bits, also the size of the hash output. Must be the same in order to be XORed
         k = 128; // Security parameter
         l = 128;
@@ -53,6 +54,7 @@ public class PSender {
         qjArray = new byte[m][]; // This array is the transposition of the Qi array. It has a size of m because qArray would be l*m. Therefore the transposed table must have width of size m
         y0Array = new byte[m][]; // This array has a size of m because that's the size of the original array (xArray)
         y1Array = new byte[m][]; // This array has a size of m because that's the size of the original array (xArray)
+
         /*
         t0jArray = new byte[l][];
         rArray = new byte[l/8];
@@ -164,16 +166,7 @@ public class PSender {
     // Method to create the sArray of size l
     public void setSArray() {
 
-        //new SecureRandom().nextBytes(sArray);
-
-        int[] array = new int[l];
-        //Random random = new Random();
-
-        for (int i = 0; i < l; i++) {
-            array[i] = 0;
-        }
-
-        sArray = intArrayToByteArray(array);
+        new SecureRandom().nextBytes(sArray);
 
     }
 
@@ -351,7 +344,6 @@ public class PSender {
     public void setYArrays() throws NoSuchAlgorithmException {
 
         for (int i = 0; i < m; i++) {
-            System.out.println("qjArray[" + i + "]): " + Arrays.toString(qjArray[i]));
             y0Array[i] = xorByteArrays(x0Array[i], GlobalMethods.SHA1(qjArray[i]));
             //y1Array[i] = xorByteArrays(x1Array[i], GlobalMethods.SHA1(xorByteArrays(sArray, qjArray[i])));
             y1Array[i] = xorByteArrays(x1Array[i], GlobalMethods.SHA1(qjArray[i]));

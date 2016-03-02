@@ -61,16 +61,34 @@ public class ReceiverMain {
 
         Pr.uArrayTransferSender();
 
+        //=====================================================
+        Timer transpositionReceiver = Timer.start();
+        //=====================================================
+
         Pr.setT0JArray();
-        Pr.setT1JArray();
+
+        //=====================================================
+        long transpositionReceiverSeconds = transpositionReceiver.nanoToSeconds();
+        long transpositionReceiverMilliseconds = transpositionReceiver.nanoToMillis();
+        //=====================================================
+
+        //Pr.setT1JArray();
         //Pr.printTJArray();
 
+        //=====================================================
+        Timer transferYReceiver = Timer.start();
+        //=====================================================
+
         Pr.yArrayTransferReceiver();
+
+        //=====================================================
+        long transferYReceiverSeconds = transferYReceiver.nanoToSeconds();
+        long transferYReceiverMilliseconds = transferYReceiver.nanoToMillis();
+        //=====================================================
+
         //Pr.printYArrays();
 
         Pr.getX();
-
-        Pr.printResults();
 
         //Pr.getX_Cheat();
         //Pr.printCheatResults();
@@ -78,9 +96,15 @@ public class ReceiverMain {
         //=====================================================
         long totalTimeSeconds = totalTimer_Receiver.nanoToSeconds();
         long totalTimeMilliseconds = totalTimer_Receiver.nanoToMillis();
+        //=====================================================
 
+        Pr.printResults();
+
+        //=====================================================
         System.out.println("\nTotal elapsed time: " + totalTimeSeconds + " seconds\nOr, " + totalTimeMilliseconds + " milliseconds");
         System.out.println("\nOblivious Transfer elapsed time: " + obliviousTransferSeconds + " seconds\nOr, " + obliviousTransferMilliseconds + " milliseconds");
+        System.out.println("\nTransposition elapsed time: " + transpositionReceiverSeconds + " seconds\nOr, " + transpositionReceiverMilliseconds + " milliseconds");
+        System.out.println("\nTransfer of Y elapsed time: " + transferYReceiverSeconds + " seconds\nOr, " + transferYReceiverMilliseconds + " milliseconds");
         //=====================================================
 
         //=====================================================

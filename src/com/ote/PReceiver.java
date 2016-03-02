@@ -47,7 +47,7 @@ public class PReceiver {
 
     // Default Constructor
     public PReceiver() {
-        m = 4096; // The number of the pairs of the Sender, the number of the choiceBits of the Receiver
+        m = 393216; // The number of the pairs of the Sender, the number of the choiceBits of the Receiver
         n = 160; // The size of each X in bits, also the size of the hash output. Must be the same in order to be XORed
         k = 128; // Security parameter
         l = 128;

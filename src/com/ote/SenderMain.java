@@ -33,14 +33,14 @@ public class SenderMain {
         //Ps.printSArray();
 
         //=====================================================
-        Timer obliviousTransfer_Sender = Timer.start();
+        Timer obliviousTransferSender = Timer.start();
         //=====================================================
 
         Ps.obliviousTransferReceiver(); // Initiate the OT between the Sender and the Receiver. The OT will run l times.
 
         //=====================================================
-        long obliviousTransferSeconds = obliviousTransfer_Sender.nanoToSeconds();
-        long obliviousTransferMilliseconds = obliviousTransfer_Sender.nanoToMillis();
+        long obliviousTransferSeconds = obliviousTransferSender.nanoToSeconds();
+        long obliviousTransferMilliseconds = obliviousTransferSender.nanoToMillis();
         //=====================================================
 
         //Ps.printKArray();
@@ -55,21 +55,55 @@ public class SenderMain {
         Ps.setQArray();
         //Ps.printQArray();
 
+        //=====================================================
+        Timer transpositionSender = Timer.start();
+        //=====================================================
+
         Ps.setQjArray();
         //Ps.printQJArray();
 
+        //=====================================================
+        long transpositionSenderSeconds = transpositionSender.nanoToSeconds();
+        long transpositionSenderMilliseconds = transpositionSender.nanoToMillis();
+        //=====================================================
+
+        //=====================================================
+        Timer setYSender = Timer.start();
+        //=====================================================
+
         Ps.setYArrays();
+
+        //=====================================================
+        long setYSenderSeconds = setYSender.nanoToSeconds();
+        long setYSenderMilliseconds = setYSender.nanoToMillis();
+        //=====================================================
+
         //Ps.printYArrays();
 
+        //=====================================================
+        Timer transferYSender = Timer.start();
+        //=====================================================
+
         Ps.yArrayTransferSender();
-        Ps.printXArray();
+
+        //=====================================================
+        long transferYSenderSeconds = transferYSender.nanoToSeconds();
+        long transferYSenderMilliseconds = transferYSender.nanoToMillis();
+        //=====================================================
 
         //=====================================================
         long totalTimeSeconds = totalTimer_Sender.nanoToSeconds();
         long totalTimeMilliseconds = totalTimer_Sender.nanoToMillis();
+        //=====================================================
 
+        Ps.printXArray();
+
+        //=====================================================
         System.out.println("\nTotal elapsed time: " + totalTimeSeconds + " seconds\nOr, " + totalTimeMilliseconds + " milliseconds");
         System.out.println("\nOblivious Transfer elapsed time: " + obliviousTransferSeconds + " seconds\nOr, " + obliviousTransferMilliseconds + " milliseconds");
+        System.out.println("\nTransposition elapsed time: " + transpositionSenderSeconds + " seconds\nOr, " + transpositionSenderMilliseconds + " milliseconds");
+        System.out.println("\nSet Y elapsed time: " + setYSenderSeconds + " seconds\nOr, " + setYSenderMilliseconds + " milliseconds");
+        System.out.println("\nTransfer of Y elapsed time: " + transferYSenderSeconds + " seconds\nOr, " + transferYSenderMilliseconds + " milliseconds");
         //=====================================================
 
         //=====================================================
@@ -83,7 +117,6 @@ public class SenderMain {
         Ps.printT0JArray();
         Ps.testing();
         */
-
 
     }
 }
