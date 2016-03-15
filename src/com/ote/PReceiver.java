@@ -66,11 +66,10 @@ public class PReceiver {
     private byte[][] y1Array; // This array contains the result of [x1Array XOR (H(qjArray) XOR sArray)], received by PSender to be decrypted
     private byte[][] xArray; // This array contains the answers after the decryption
 
-    private byte[][] x0Array_Cheat;
-    private byte[][] x1Array_Cheat;
 
     // Default Constructor
     public PReceiver() {
+
         m = 262144; // The number of the pairs of the Sender, the number of the choiceBits of the Receiver
         n = 160; // The size of each X in bits, also the size of the hash output. Must be the same in order to be XORed
         k = 128; // Security parameter
@@ -87,8 +86,6 @@ public class PReceiver {
         y1Array = new byte[m][]; // This array contains the encoded original messages. Of size m because m is the size of the original array
         xArray = new byte[m][]; // This array contains the decrypted message, of size me because m is the size of the original array
 
-        x0Array_Cheat = new byte[m][];
-        x1Array_Cheat = new byte[m][];
     }
 
     // Overloaded Constructor
@@ -464,38 +461,6 @@ public class PReceiver {
 
     }
 
-    public void getX_Cheat() throws NoSuchAlgorithmException {
-
-        for (int i = 0; i < m; i++) {
-
-            x0Array_Cheat[i] = xorByteArrays(y0Array[i], GlobalMethods.SHA1(t0jArray[i]));
-
-            x1Array_Cheat[i] = xorByteArrays(y1Array[i], GlobalMethods.SHA1(t0jArray[i]));
-
-        }
-
-    }
-
-    public void printCheatResults() {
-
-        System.out.println("\n=========================================================================================");
-        System.out.println("=========================================================================================");
-        System.out.println("\n\t\t\t\t\t\t\tBelow are the CHEAT results:\n");
-        System.out.println("=========================================================================================");
-        System.out.println("=========================================================================================\n");
-
-        for (int i = 0; i < m; i++) {
-            System.out.println("x0Array[" + i + "] = " + Arrays.toString(x0Array_Cheat[i]));
-        }
-        System.out.println("\n=========================================================================================\n");
-        for (int i = 0; i < m; i++) {
-            System.out.println("x1Array[" + i + "] = " + Arrays.toString(x1Array_Cheat[i]));
-        }
-        System.out.println("\n=========================================================================================");
-        System.out.println("=========================================================================================");
-
-    }
-
     // Method to print the results
     public void printResults() {
         System.out.println("\n=========================================================================================");
@@ -513,75 +478,6 @@ public class PReceiver {
         System.out.println("=========================================================================================");
     }
 
-    //========================================================================================================
-    //                                              TEST AREA
-    //========================================================================================================
-
-    public void t0ArrayTransferSender() throws TimeoutException, DuplicatePartyException, IOException {
-
-        // OT EXTENSION PHASE
-        // Method for sending the uArray during the OT EXTENSION PHASE
-        System.out.println("\nTransfer begins now...\n");
-
-        Channel plainTCPChannel = plainTCPChannelCreation();
-
-        for (int i = 0; i < l; i++) {
-            plainTCPChannel.send(t0Array[i]);
-        }
-
-        plainTCPChannel.close();
-
-        System.out.println("\nTransfer completed.\n");
-
-    }
-
-    public void t0jArrayTransferSender() throws TimeoutException, DuplicatePartyException, IOException {
-
-        // OT EXTENSION PHASE
-        // Method for sending the uArray during the OT EXTENSION PHASE
-        System.out.println("\nTransfer begins now...\n");
-
-        Channel plainTCPChannel = plainTCPChannelCreation();
-
-        for (int i = 0; i < l; i++) {
-            plainTCPChannel.send(t0jArray[i]);
-        }
-
-        plainTCPChannel.close();
-
-        System.out.println("\nTransfer completed.\n");
-
-    }
-
-    public void rArrayTransferSender() throws TimeoutException, DuplicatePartyException, IOException {
-
-        System.out.println("\nTransfer begins now...\n");
-
-        Channel plainTCPChannel = plainTCPChannelCreation();
-
-        plainTCPChannel.send(choiceBits);
-
-        plainTCPChannel.close();
-
-        System.out.println("\nTransfer completed.\n");
-
-    }
-
-    public void printT0JArray() {
-
-        System.out.println("\nBelow is the t0JArray:\n");
-
-        for (int i = 0; i < m; i++) {
-            System.out.println("Length: " + t0jArray[i].length);
-            System.out.println("Output (String): " + Arrays.toString(t0jArray[i]));
-        }
-
-
-    }
-
-    //========================================================================================================
-    //                                              TEST AREA
-    //========================================================================================================
 
 }
 

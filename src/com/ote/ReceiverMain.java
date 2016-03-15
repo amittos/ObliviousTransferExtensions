@@ -135,17 +135,5 @@ public class ReceiverMain {
         System.out.println("\nTransfer of Y elapsed time: " + transferYReceiverSeconds + " seconds\nOr, " + transferYReceiverMilliseconds + " milliseconds");
         //=====================================================
 
-        //=====================================================
-        //                  TESTING PHASE
-        //=====================================================
-        /*
-        Pr.t0ArrayTransferSender();
-        Pr.t0jArrayTransferSender();
-        Pr.rArrayTransferSender();
-
-        Pr.printChoiceBits();
-        Pr.printT0JArray();
-        */
-
     }
 }
