@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -188,9 +189,15 @@ public class PSender {
     // Method to create the sArray of size l
     public void setSArray() {
 
-        //new SecureRandom().nextBytes(sArray);
-        //new Random().nextBytes(sArray);
+        // CAUTION: BUG
+        // For some reason which I don't understand, the protocol will not produce the right
+        // results when I fill the sArray randomly. If however I set the sArray manually by
+        // making everything zero or one, the protocol works. I can't figure out the source
+        // of the problem, hence it's a problem to be fixed.
 
+        new SecureRandom().nextBytes(sArray);
+
+        /*
         int[] array = new int[l];
 
         for (int i = 0; i < l; i++) {
@@ -200,6 +207,7 @@ public class PSender {
         }
 
         sArray = intArrayToByteArray(array);
+        */
 
     }
 
