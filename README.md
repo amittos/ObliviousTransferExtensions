@@ -17,7 +17,7 @@ To run this project you'll need to have installed:
 
 If the Sender and the Receiver are using the same address, simply run the `SenderMain` and the `ReceiverMain` classes. If the the parties are using different addresses, you'll need to modify the `SocketParties.properties` file accordingly. More information [here](http://scapi.readthedocs.org/en/latest/communication.html#setting-up-communication). 
 
-To configure the number of transactions, simply edit the `m` value in both the `PSender` and `PReceiver` classes in the default constructor method. Bare in mind though that the `m` value **MUST** be divisible by 8 and of course it must be the same in both classes. 
+To configure the number of transactions, simply edit the `m` value in both the `PSender` and `PReceiver` classes in the default constructor method. Bare in mind though that the `m` value **MUST** be divisible by 8 and of course it must be the same in both classes. To view the various arrays, choice bits etc. simply uncomment the various print methods in the main classes as you wish. 
 
 ## Where to get help
 
@@ -48,6 +48,8 @@ Booktitle: Advances in Cryptology - CRYPTO 2003, 23rd Annual International Crypt
 Year: 2003<br>
 Link: https://www.iacr.org/cryptodb/data/paper.php?pubkey=1432
 
-## Licence 
+## Copying and License 
 
-This project is distributed under the [GNU AFFERO GENERAL PUBLIC LICENSE](http://www.gnu.org/licenses/agpl-3.0.txt). 
+This material is copyright (c) 2016.
+
+It is open and licensed under the **GNU Affero General Public License (AGPL) v3.0** whose full text may be found [here](http://www.gnu.org/licenses/agpl-3.0.txt). 
