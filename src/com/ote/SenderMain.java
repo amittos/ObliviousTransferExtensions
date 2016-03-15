@@ -1,16 +1,47 @@
+/*
+
+This file is part of OTExtentions.
+
+OTExtentions is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License (AGPL)
+v3.0 as published by the Free Software Foundation.
+
+OTExtentions is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU Affero General Public License (AGPL) v3.0 for more details.
+
+You should have received a copy of the  GNU Affero General Public
+License (AGPL) v3.0 along with OTExtentions. If not, see
+<http://www.gnu.org/licenses/agpl-3.0.txt>.
+
+
+=====================================
+
+    Author: Alexandros Mittos
+    Year:   2016
+
+=====================================
+
+*/
+
 package com.ote;
 
 import edu.biu.scapi.exceptions.DuplicatePartyException;
 import edu.biu.scapi.exceptions.FactoriesException;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.concurrent.TimeoutException;
 
 public class SenderMain {
 
-    public static void main(String[] args) throws ClassNotFoundException, DuplicatePartyException, TimeoutException, IOException, FactoriesException, InvalidKeyException, NoSuchAlgorithmException {
+    public static void main(String[] args) throws ClassNotFoundException, DuplicatePartyException, TimeoutException, IOException, FactoriesException, InvalidKeyException, NoSuchAlgorithmException, IllegalBlockSizeException, NoSuchPaddingException, NoSuchProviderException, BadPaddingException {
 
         //=====================================================
         //                  INITIATION PHASE
@@ -96,7 +127,7 @@ public class SenderMain {
         long totalTimeMilliseconds = totalTimer_Sender.nanoToMillis();
         //=====================================================
 
-        Ps.printXArray();
+        //Ps.printXArray();
 
         //=====================================================
         System.out.println("\nTotal elapsed time: " + totalTimeSeconds + " seconds\nOr, " + totalTimeMilliseconds + " milliseconds");

@@ -1,3 +1,30 @@
+/*
+
+This file is part of OTExtentions.
+
+OTExtentions is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License (AGPL)
+v3.0 as published by the Free Software Foundation.
+
+OTExtentions is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU Affero General Public License (AGPL) v3.0 for more details.
+
+You should have received a copy of the  GNU Affero General Public
+License (AGPL) v3.0 along with OTExtentions. If not, see
+<http://www.gnu.org/licenses/agpl-3.0.txt>.
+
+
+=====================================
+
+    Author: Alexandros Mittos
+    Year:   2016
+
+=====================================
+
+*/
+
 package com.ote;
 
 import edu.biu.scapi.comm.Channel;
@@ -17,10 +44,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +71,7 @@ public class PReceiver {
 
     // Default Constructor
     public PReceiver() {
-        m = 393216; // The number of the pairs of the Sender, the number of the choiceBits of the Receiver
+        m = 262144; // The number of the pairs of the Sender, the number of the choiceBits of the Receiver
         n = 160; // The size of each X in bits, also the size of the hash output. Must be the same in order to be XORed
         k = 128; // Security parameter
         l = 128;
@@ -227,7 +251,7 @@ public class PReceiver {
     }
 
     // Method to set the tArray
-    public void setTArray() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, ShortBufferException, FactoriesException {
+    public void setTArray() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, UnsupportedEncodingException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, ShortBufferException, FactoriesException, NoSuchProviderException {
 
         for (int i = 0; i < k0Array.length; i++) {
             t0Array[i] = GlobalMethods.SCAPI_PRG(m / 8, k0Array[i]);

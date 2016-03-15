@@ -1,3 +1,30 @@
+/*
+
+This file is part of OTExtentions.
+
+OTExtentions is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License (AGPL)
+v3.0 as published by the Free Software Foundation.
+
+OTExtentions is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU Affero General Public License (AGPL) v3.0 for more details.
+
+You should have received a copy of the  GNU Affero General Public
+License (AGPL) v3.0 along with OTExtentions. If not, see
+<http://www.gnu.org/licenses/agpl-3.0.txt>.
+
+
+=====================================
+
+    Author: Alexandros Mittos
+    Year:   2016
+
+=====================================
+
+*/
+
 package com.ote;
 
 import edu.biu.scapi.comm.Channel;
@@ -12,10 +39,13 @@ import edu.biu.scapi.interactiveMidProtocols.ot.OTRBasicInput;
 import edu.biu.scapi.interactiveMidProtocols.ot.OTROutput;
 import edu.biu.scapi.interactiveMidProtocols.ot.oneSidedSimulation.OTOneSidedSimDDHOnByteArrayReceiver;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.NoSuchProviderException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +71,7 @@ public class PSender {
 
     // Default Constructor
     public PSender() {
-        m = 393216; // The number of the pairs of the Sender, the number of the choiceBits of the Receiver
+        m = 262144; // The number of the pairs of the Sender, the number of the choiceBits of the Receiver
         n = 160; // The size of each X in bits, also the size of the hash output. Must be the same in order to be XORed
         k = 128; // Security parameter
         l = 128;
@@ -166,7 +196,18 @@ public class PSender {
     // Method to create the sArray of size l
     public void setSArray() {
 
-        new SecureRandom().nextBytes(sArray);
+        //new SecureRandom().nextBytes(sArray);
+        //new Random().nextBytes(sArray);
+
+        int[] array = new int[l];
+
+        for (int i = 0; i < l; i++) {
+
+            array[i] = 0;
+
+        }
+
+        sArray = intArrayToByteArray(array);
 
     }
 
@@ -181,6 +222,8 @@ public class PSender {
             counter++;
         }
         System.out.println("Number of bits: " + counter);
+        System.out.println("\nsArray Length: " + sArray.length);
+        System.out.println("sArray: " + Arrays.toString(sArray));
     }
 
     // Method for the PSender to use OT as a receiver (OT PHASE). The method will run l times
@@ -281,7 +324,7 @@ public class PSender {
     }
 
     // Method to set the qArray which contains the result of [(Si * Ui) XOR G(Ksi)]
-    public void setQArray() throws InvalidKeyException, FactoriesException {
+    public void setQArray() throws InvalidKeyException, FactoriesException, NoSuchProviderException, BadPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, NoSuchPaddingException {
 
         // OT EXTENSION PHASE
         for (int i = 0; i < l; i++) {
@@ -345,8 +388,7 @@ public class PSender {
 
         for (int i = 0; i < m; i++) {
             y0Array[i] = xorByteArrays(x0Array[i], GlobalMethods.SHA1(qjArray[i]));
-            //y1Array[i] = xorByteArrays(x1Array[i], GlobalMethods.SHA1(xorByteArrays(sArray, qjArray[i])));
-            y1Array[i] = xorByteArrays(x1Array[i], GlobalMethods.SHA1(qjArray[i]));
+            y1Array[i] = xorByteArrays(x1Array[i], GlobalMethods.SHA1(xorByteArrays(sArray, qjArray[i])));
         }
     }
 

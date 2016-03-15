@@ -1,14 +1,39 @@
+/*
+
+This file is part of OTExtentions.
+
+OTExtentions is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License (AGPL)
+v3.0 as published by the Free Software Foundation.
+
+OTExtentions is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU Affero General Public License (AGPL) v3.0 for more details.
+
+You should have received a copy of the  GNU Affero General Public
+License (AGPL) v3.0 along with OTExtentions. If not, see
+<http://www.gnu.org/licenses/agpl-3.0.txt>.
+
+
+=====================================
+
+    Author: Alexandros Mittos
+    Year:   2016
+
+=====================================
+
+*/
+
 package com.ote;
 
 import edu.biu.scapi.exceptions.FactoriesException;
 import edu.biu.scapi.primitives.prg.PseudorandomGenerator;
 import edu.biu.scapi.tools.Factories.PrgFactory;
 
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 
 public class GlobalMethods {
 
@@ -37,12 +62,47 @@ public class GlobalMethods {
         return outBytes;
     }
 
+    public static byte[] AES_PRG(int m, byte[] k) throws FactoriesException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException, BadPaddingException, IllegalBlockSizeException {
+
+        // http://stackoverflow.com/a/14204473/873309
+        // Use the incoming byte array as the secret key
+        SecretKey secretKey = new SecretKeySpec(k, 0, k.length, "AES");
+
+        Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+
+        // Create a byte array of size m
+        byte[] array = new byte[m];
+
+        // Fill the byte array with random bytes
+        new SecureRandom().nextBytes(array);
+
+        byte[] outBytes = cipher.doFinal(array);
+
+        return outBytes;
+
+    }
+
+
+
     // Method to create a SHA1 sum of a byte array
     // http://stackoverflow.com/a/1515495/873309
     public static byte[] SHA1(byte[] convertMe) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-1");
         return md.digest(convertMe);
     }
+
+    public static byte[] SHA256(byte[] convertMe) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        return md.digest(convertMe);
+    }
+
+    public static byte[] SHA512(byte[] convertMe) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("SHA-512");
+        return md.digest(convertMe);
+    }
+
+
 
     // Method to create a MD5 sum of a byte array
     // http://stackoverflow.com/a/1515495/873309
