@@ -3,7 +3,7 @@
 ## Summary
 
 This is a concrete implementation of the [IKPN03](https://www.iacr.org/cryptodb/data/paper.php?pubkey=1432) protocol written in Java, using the [SCAPI](http://scapi.readthedocs.org/en/latest/intro.html) interface. 
-This project was made for my MSc thesis for the department of [Information & Communication Systems Engineering](http://msc.icsd.aegean.gr/) of the [University of the Aegean](http://www.aegean.gr/).
+This project was made for my MSc thesis for the department of [Information & Communication Systems Engineering](http://msc.icsd.aegean.gr/) of the [University of the Aegean](http://www.aegean.gr/), under the supervision of Dr. [Panagiotis Rizomiliotis](https://www.linkedin.com/in/panagiotis-rizomiliotis-1573512a).
 This project is distributed under the [GNU AFFERO GENERAL PUBLIC LICENSE](http://www.gnu.org/licenses/agpl-3.0.txt). 
 
 ## Installation instructions 
