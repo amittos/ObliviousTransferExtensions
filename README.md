@@ -1,4 +1,4 @@
-# Oblivious Transfer Extension
+# Oblivious Transfer Extensions
 
 ## Summary
 
